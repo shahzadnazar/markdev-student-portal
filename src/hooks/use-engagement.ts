@@ -138,7 +138,7 @@ export function useBookmarks(params: { type?: BookmarkableType } & ListParams = 
 export function useToggleBookmark() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
+    mutationFn: async ({
       type,
       id,
       bookmarked,
@@ -147,7 +147,13 @@ export function useToggleBookmark() {
       id: number;
       /** Desired end state. */
       bookmarked: boolean;
-    }) => (bookmarked ? bookmarksRepository.add(type, id) : bookmarksRepository.remove(type, id)),
+    }) => {
+      if (bookmarked) {
+        await bookmarksRepository.add(type, id);
+      } else {
+        await bookmarksRepository.remove(type, id);
+      }
+    },
     onSuccess: (_data, { type, id }) => {
       void queryClient.invalidateQueries({ queryKey: ["bookmarks"] });
       if (type === "course") {
