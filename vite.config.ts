@@ -11,6 +11,18 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Keep heavyweight vendors in stable, cacheable chunks.
+        manualChunks: {
+          react: ["react", "react-dom", "react-router-dom"],
+          motion: ["framer-motion"],
+          charts: ["recharts"],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {
