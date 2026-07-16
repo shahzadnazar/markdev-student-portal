@@ -1,0 +1,181 @@
+@import "@fontsource-variable/hanken-grotesk";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
+@import "tailwindcss";
+
+/*
+ * MarkDev LMS design system — implemented from docs/DESIGN.md.
+ *
+ * Brand mapping (per the design doc prose):
+ *  - `primary`   → Deep Ocean Blue #0C5ABD, the driver for actions and brand identity.
+ *  - `primary-deep` → #004393, the darker tonal step used for hover/pressed states.
+ *  - `secondary` → Accent Purple #6B53C4, for secondary CTAs, progress and
+ *    "enlightenment" moments.
+ *  - `surface-ice` → #F5F9FF, the foundational app background.
+ * `success` and `warning` are pragmatic extensions (status chips for
+ * submissions/attendance) tuned to sit quietly next to the core palette.
+ */
+@theme {
+  --font-display: "Hanken Grotesk Variable", "Hanken Grotesk", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Inter Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, monospace;
+
+  /* Surfaces */
+  --color-surface: #f9f9fc;
+  --color-surface-dim: #dadadc;
+  --color-surface-bright: #f9f9fc;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f3f6;
+  --color-surface-container: #eeeef0;
+  --color-surface-container-high: #e8e8ea;
+  --color-surface-container-highest: #e2e2e5;
+  --color-surface-variant: #e2e2e5;
+  --color-surface-ice: #f5f9ff;
+  --color-on-surface: #1a1c1e;
+  --color-on-surface-variant: #424753;
+  --color-inverse-surface: #2f3133;
+  --color-inverse-on-surface: #f0f0f3;
+
+  /* Outline */
+  --color-outline: #727784;
+  --color-outline-variant: #c2c6d5;
+
+  /* Primary — Deep Ocean Blue */
+  --color-primary: #0c5abd;
+  --color-primary-deep: #004393;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #d8e2ff;
+  --color-on-primary-container: #001a41;
+  --color-inverse-primary: #adc6ff;
+  --color-primary-fixed: #d8e2ff;
+  --color-primary-fixed-dim: #adc6ff;
+  --color-on-primary-fixed: #001a41;
+  --color-on-primary-fixed-variant: #004494;
+  --color-surface-tint: #0e5bbe;
+
+  /* Secondary — Accent Purple */
+  --color-secondary: #6b53c4;
+  --color-secondary-deep: #634bbb;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #e7deff;
+  --color-on-secondary-container: #36158e;
+  --color-secondary-fixed: #e7deff;
+  --color-secondary-fixed-dim: #cbbeff;
+  --color-on-secondary-fixed: #1e0060;
+  --color-on-secondary-fixed-variant: #4b30a2;
+
+  /* Tertiary — neutral steel */
+  --color-tertiary: #42464b;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #595e63;
+  --color-on-tertiary-container: #d3d7dd;
+  --color-tertiary-fixed: #dfe3e9;
+  --color-tertiary-fixed-dim: #c2c7cd;
+  --color-on-tertiary-fixed: #171c20;
+  --color-on-tertiary-fixed-variant: #42474c;
+
+  /* Error */
+  --color-error: #ba1a1a;
+  --color-on-error: #ffffff;
+  --color-error-container: #ffdad6;
+  --color-on-error-container: #93000a;
+
+  /* Status extensions (not in the core palette — see docs/DESIGN.md note) */
+  --color-success: #0e7b54;
+  --color-success-container: #d9f2e5;
+  --color-on-success-container: #00512f;
+  --color-warning: #9a6400;
+  --color-warning-container: #ffefd4;
+  --color-on-warning-container: #5c3c00;
+
+  /* Background & text aliases */
+  --color-background: #f9f9fc;
+  --color-on-background: #1a1c1e;
+  --color-text-main: #1a1c1e;
+
+  /* Type scale — tripartite: Hanken Grotesk / Inter / JetBrains Mono */
+  --text-headline-xl: 2.5rem;
+  --text-headline-xl--line-height: 3rem;
+  --text-headline-xl--letter-spacing: -0.02em;
+  --text-headline-xl--font-weight: 700;
+  --text-headline-lg: 2rem;
+  --text-headline-lg--line-height: 2.5rem;
+  --text-headline-lg--letter-spacing: -0.01em;
+  --text-headline-lg--font-weight: 600;
+  --text-headline-md: 1.5rem;
+  --text-headline-md--line-height: 2rem;
+  --text-headline-md--font-weight: 600;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.75rem;
+  --text-body-md: 1rem;
+  --text-body-md--line-height: 1.5rem;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.25rem;
+  --text-label-md: 0.875rem;
+  --text-label-md--line-height: 1.25rem;
+  --text-label-md--letter-spacing: 0.02em;
+  --text-label-md--font-weight: 500;
+  --text-label-sm: 0.75rem;
+  --text-label-sm--line-height: 1rem;
+  --text-label-sm--letter-spacing: 0.05em;
+  --text-label-sm--font-weight: 500;
+
+  /* Elevation — primary-tinted "glow" shadows, never grey smudges */
+  --shadow-card: 0px 4px 20px rgba(12, 90, 189, 0.05);
+  --shadow-elevated: 0px 12px 32px rgba(12, 90, 189, 0.12);
+
+  /* Layout rhythm */
+  --spacing-sidebar: 17.5rem; /* 280px persistent sidebar */
+  --spacing-shell: 90rem; /* 1440px max content width */
+
+  /* Brand gradient — primary → secondary, denotes activity/premium states */
+  --gradient-brand: linear-gradient(135deg, #0c5abd 0%, #6b53c4 100%);
+}
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-surface-ice font-sans text-body-md text-on-surface;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-display;
+  }
+
+  /* Focus halo: 2px ring of 20% primary, per the input spec */
+  :focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 1px var(--color-primary),
+      0 0 0 4px color-mix(in srgb, var(--color-primary) 20%, transparent);
+  }
+
+  ::selection {
+    background-color: color-mix(in srgb, var(--color-primary) 18%, transparent);
+  }
+}
+
+@utility bg-gradient-brand {
+  background-image: var(--gradient-brand);
+}
+
+@utility text-gradient-brand {
+  background-image: var(--gradient-brand);
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+/* Thin, unobtrusive scrollbars for the app shell */
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-outline-variant) transparent;
+}
