@@ -29,6 +29,7 @@ export const paths = {
   search: "/search",
   calendar: "/calendar",
 
+  payments: "/payments",
   profile: "/profile",
   settings: "/settings",
   help: "/help",

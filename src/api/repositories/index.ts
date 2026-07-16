@@ -1,4 +1,5 @@
 export { authRepository } from "./auth.repository";
+export { billingRepository } from "./billing.repository";
 export { coursesRepository, lessonsRepository } from "./catalog.repository";
 export { assignmentsRepository, quizzesRepository } from "./assessments.repository";
 export {

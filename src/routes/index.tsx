@@ -28,6 +28,7 @@ const NotificationsPage = lazy(() => import("@/pages/notifications/notifications
 const BookmarksPage = lazy(() => import("@/pages/bookmarks/bookmarks-page"));
 const SearchPage = lazy(() => import("@/pages/search/search-page"));
 const CalendarPage = lazy(() => import("@/pages/calendar/calendar-page"));
+const PaymentsPage = lazy(() => import("@/pages/payments/payments-page"));
 const ProfilePage = lazy(() => import("@/pages/profile/profile-page"));
 const SettingsPage = lazy(() => import("@/pages/settings/settings-page"));
 const HelpCenterPage = lazy(() => import("@/pages/help/help-center-page"));
@@ -85,6 +86,7 @@ const router = createBrowserRouter([
           { path: "/bookmarks", element: page(<BookmarksPage />) },
           { path: "/search", element: page(<SearchPage />) },
           { path: "/calendar", element: page(<CalendarPage />) },
+          { path: "/payments", element: page(<PaymentsPage />) },
           { path: "/profile", element: page(<ProfilePage />) },
           { path: "/settings", element: page(<SettingsPage />) },
           { path: "/help", element: page(<HelpCenterPage />) },

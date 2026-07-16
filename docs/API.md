@@ -86,6 +86,18 @@ Conventions:
 | GET | `/settings` | Timezone, language, notification preferences |
 | PUT | `/settings` | Partial update of the same shape |
 
+## Billing & payments (student-facing)
+
+| Method | Endpoint | Notes |
+| --- | --- | --- |
+| GET | `/billing` | Account overview: plan title, billing cycle/active flag, currency, `total_amount`, `paid_amount`, `remaining_amount`, `paid_percent`, `next_due_at`, `next_invoice`, `statement_url` (PDF) |
+| GET | `/billing/transactions` | *paginated*; filters: `status` (`success`\|`pending`\|`failed`\|`refunded`), `from`, `to`. Each row: `reference` (e.g. TRX-99201), method (`card`/`bank_transfer`/`wallet`/`cash`/`other` + pre-rendered label like "Visa •••• 4242"), amount, currency, status, `receipt_url` |
+| GET | `/billing/invoices` | *paginated*; `status?` (`open`\|`paid`\|`past_due`\|`void`); rows include `number`, amount, due/paid dates, `download_url` |
+| POST | `/billing/invoices/{invoice}/pay` | Starts payment → `{ data: { checkout_url, transaction } }`. `checkout_url` set → the portal redirects to the hosted checkout; `transaction` set → settled immediately (e.g. wallet/manual) |
+| POST | `/billing/transactions/{transaction}/retry` | Retries a **failed** transaction; same response shape as pay |
+
+Payment-provider webhooks, fee-plan assignment, manual payment recording, refunds, and invoice CRUD are **admin-side** concerns in `markdev-admin-api` (Blade admin): admins manage fee plans per student/course, issue invoices, record offline payments (cash/bank transfer), issue refunds, and export statements — all audit-logged like every other module. The student portal only consumes the read/pay endpoints above.
+
 ## Cross-cutting expectations
 
 - **401** on any endpoint logs the student out client-side; tokens are Sanctum personal access tokens.

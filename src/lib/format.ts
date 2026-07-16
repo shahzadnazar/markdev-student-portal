@@ -69,6 +69,16 @@ export function initials(name: string | null | undefined): string {
     .join("");
 }
 
+/** (1200, "USD") → "$1,200.00" */
+export function formatMoney(amount: number | null | undefined, currency = "USD"): string {
+  if (amount == null) return "—";
+  return new Intl.NumberFormat("en", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 2,
+  }).format(amount);
+}
+
 /** 12345 → "12.3k" */
 export function formatCompact(value: number | null | undefined): string {
   if (value == null) return "—";

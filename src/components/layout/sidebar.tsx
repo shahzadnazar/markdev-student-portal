@@ -6,6 +6,7 @@ import {
   BookOpen,
   CalendarDays,
   ClipboardList,
+  CreditCard,
   FileQuestion,
   HelpCircle,
   LayoutDashboard,
@@ -62,6 +63,7 @@ const sections: NavSection[] = [
   {
     title: "Account",
     items: [
+      { label: "Payments", to: paths.payments, icon: CreditCard },
       { label: "Profile", to: paths.profile, icon: UserRound },
       { label: "Settings", to: paths.settings, icon: Settings },
       { label: "Help Center", to: paths.help, icon: HelpCircle },

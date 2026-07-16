@@ -3,9 +3,11 @@ import type {
   AttendanceParams,
   BookmarkableType,
   CourseListParams,
+  InvoiceListParams,
   Leaderboard,
   ListParams,
   QuizListParams,
+  TransactionListParams,
 } from "@/types";
 
 /** Central query-key factory — the single source of truth for cache identity. */
@@ -55,4 +57,9 @@ export const qk = {
   faqs: ["help", "faqs"] as const,
 
   settings: ["settings"] as const,
+
+  billing: ["billing"] as const,
+  billingTransactions: (params: TransactionListParams = {}) =>
+    ["billing", "transactions", params] as const,
+  billingInvoices: (params: InvoiceListParams = {}) => ["billing", "invoices", params] as const,
 } as const;
