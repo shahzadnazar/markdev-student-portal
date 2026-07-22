@@ -1,8 +1,7 @@
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
-import { Banknote, CreditCard, Landmark, Receipt, ReceiptText, RotateCcw, Wallet } from "lucide-react";
+import { Banknote, CreditCard, Landmark, Receipt, ReceiptText, Wallet } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { Badge, type badgeVariants } from "@/components/ui/badge";
@@ -17,9 +16,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useRetryTransaction, useTransactions } from "@/hooks/use-billing";
+import { useTransactions } from "@/hooks/use-billing";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PaymentMethodType, Transaction, TransactionStatus } from "@/types";
@@ -41,8 +39,9 @@ const statusConfig: Record<
   TransactionStatus,
   { label: string; variant: NonNullable<VariantProps<typeof badgeVariants>["variant"]> }
 > = {
-  success: { label: "Success", variant: "success" },
-  pending: { label: "Pending", variant: "warning" },
+  success: { label: "Verified", variant: "success" },
+  pending: { label: "Under review", variant: "warning" },
+  rejected: { label: "Rejected", variant: "error" },
   failed: { label: "Failed", variant: "error" },
   refunded: { label: "Refunded", variant: "neutral" },
 };
@@ -86,8 +85,9 @@ export function TransactionsCard({ currency }: { currency: string }) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="success">Success</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
+              <SelectItem value="pending">Under review</SelectItem>
+              <SelectItem value="success">Verified</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
               <SelectItem value="failed">Failed</SelectItem>
               <SelectItem value="refunded">Refunded</SelectItem>
             </SelectContent>
@@ -179,34 +179,6 @@ export function TransactionsCard({ currency }: { currency: string }) {
 }
 
 function TransactionActions({ transaction }: { transaction: Transaction }) {
-  const retry = useRetryTransaction();
-
-  if (transaction.status === "failed") {
-    return (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8"
-              disabled={retry.isPending}
-              onClick={() =>
-                retry.mutate(transaction.id, {
-                  onError: () => toast.error("Couldn't retry this payment. Please try again."),
-                })
-              }
-              aria-label={`Retry payment ${transaction.reference}`}
-            >
-              {retry.isPending ? <Spinner className="size-4" /> : <RotateCcw className="size-4" aria-hidden="true" />}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Retry payment</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    );
-  }
-
   if (transaction.receipt_url) {
     return (
       <TooltipProvider>
@@ -260,6 +232,11 @@ function TransactionRow({ transaction, currency }: { transaction: Transaction; c
       </td>
       <td className="py-4 pr-2 pl-2">
         <Badge variant={status.variant}>{status.label}</Badge>
+        {transaction.status === "rejected" && transaction.rejection_reason && (
+          <p className="mt-1 max-w-48 text-label-sm text-error" title={transaction.rejection_reason}>
+            {transaction.rejection_reason}
+          </p>
+        )}
       </td>
       <td className="py-4 pl-2 text-right">
         <TransactionActions transaction={transaction} />
@@ -288,6 +265,11 @@ function TransactionMobileRow({
           {formatMoney(transaction.amount, transaction.currency || currency)}
         </span>
       </div>
+      {transaction.status === "rejected" && transaction.rejection_reason && (
+        <p className="mt-2 rounded-lg bg-error-container/50 px-3 py-2 text-label-sm text-on-error-container">
+          {transaction.rejection_reason}
+        </p>
+      )}
       <div className="mt-3 flex items-center justify-between gap-3">
         <span className="font-mono text-label-sm text-on-surface-variant">
           {formatDate(transaction.created_at)}

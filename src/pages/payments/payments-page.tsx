@@ -16,11 +16,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
-import { useBillingOverview, usePayInvoice } from "@/hooks/use-billing";
+import { useState } from "react";
+import { useBillingOverview } from "@/hooks/use-billing";
 import { formatDate, formatPercent } from "@/lib/format";
 import { formatMoney } from "@/lib/format";
-import type { BillingOverview } from "@/types";
+import type { BillingOverview, Invoice } from "@/types";
+import { FeeReceiptDialog } from "./fee-receipt-dialog";
+import { InvoiceDialog } from "./invoice-dialog";
 import { InvoicesCard } from "./invoices-card";
 import { TransactionsCard } from "./transactions-card";
 
@@ -33,6 +35,8 @@ const cycleLabels: Record<string, string> = {
 export default function PaymentsPage() {
   const overviewQuery = useBillingOverview();
   const overview = overviewQuery.data;
+  const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null);
+  const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
 
   return (
     <div>
@@ -65,11 +69,17 @@ export default function PaymentsPage() {
       ) : overview && (overview.billing_active || overview.total_amount > 0) ? (
         <div className="space-y-6">
           <BillingHero overview={overview} />
-          <BillingStatCards overview={overview} />
+          <BillingStatCards overview={overview} onPay={setPayingInvoice} />
           <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
             <TransactionsCard currency={overview.currency} />
-            <InvoicesCard />
+            <InvoicesCard onPay={setPayingInvoice} onView={setViewingInvoice} />
           </div>
+          <FeeReceiptDialog
+            invoice={payingInvoice}
+            overview={overview}
+            onClose={() => setPayingInvoice(null)}
+          />
+          <InvoiceDialog invoice={viewingInvoice} onClose={() => setViewingInvoice(null)} />
         </div>
       ) : (
         <EmptyState
@@ -147,9 +157,15 @@ function BillingHero({ overview }: { overview: BillingOverview }) {
   );
 }
 
-function BillingStatCards({ overview }: { overview: BillingOverview }) {
-  const payInvoice = usePayInvoice();
+function BillingStatCards({
+  overview,
+  onPay,
+}: {
+  overview: BillingOverview;
+  onPay: (invoice: Invoice) => void;
+}) {
   const settled = overview.remaining_amount <= 0;
+  const underReview = overview.pending_invoice !== null;
   const cycleLabel = overview.billing_cycle
     ? (cycleLabels[overview.billing_cycle] ?? overview.billing_cycle)
     : null;
@@ -243,18 +259,20 @@ function BillingStatCards({ overview }: { overview: BillingOverview }) {
                   Due by {formatDate(overview.next_due_at)}
                 </p>
               )}
+              {underReview && (
+                <p className="mt-2 rounded-lg bg-warning-container/60 px-3 py-2 text-body-sm text-on-warning-container">
+                  {formatMoney(overview.pending_review_amount, overview.currency)} under review —
+                  we'll notify you once it's verified.
+                </p>
+              )}
               <Button
                 className="mt-4 w-full"
-                disabled={!overview.next_invoice || payInvoice.isPending}
+                disabled={!overview.next_invoice}
                 onClick={() => {
-                  if (overview.next_invoice) payInvoice.mutate(overview.next_invoice.id);
+                  if (overview.next_invoice) onPay(overview.next_invoice);
                 }}
               >
-                {payInvoice.isPending ? (
-                  <Spinner className="size-4 text-on-primary" />
-                ) : (
-                  <CreditCard className="size-4" aria-hidden="true" />
-                )}
+                <CreditCard className="size-4" aria-hidden="true" />
                 Pay now
                 <ArrowRight className="size-4" aria-hidden="true" />
               </Button>

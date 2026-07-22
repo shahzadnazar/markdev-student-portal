@@ -1,15 +1,13 @@
 import { motion } from "framer-motion";
-import { Download, FileText } from "lucide-react";
+import { Download, Eye, FileText, RotateCcw } from "lucide-react";
 import { useState } from "react";
-import { toast } from "sonner";
 import { ErrorState } from "@/components/shared/error-state";
 import { Badge, type badgeVariants } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PaginationBar } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Spinner } from "@/components/ui/spinner";
-import { useInvoices, usePayInvoice } from "@/hooks/use-billing";
+import { useInvoices } from "@/hooks/use-billing";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Invoice, InvoiceStatus } from "@/types";
@@ -22,12 +20,18 @@ const statusConfig: Record<
   { label: string; variant: NonNullable<VariantProps<typeof badgeVariants>["variant"]> }
 > = {
   open: { label: "Open", variant: "primary" },
+  pending: { label: "Under review", variant: "warning" },
   paid: { label: "Paid", variant: "success" },
   past_due: { label: "Past due", variant: "error" },
   void: { label: "Void", variant: "neutral" },
 };
 
-export function InvoicesCard() {
+interface InvoicesCardProps {
+  onPay: (invoice: Invoice) => void;
+  onView: (invoice: Invoice) => void;
+}
+
+export function InvoicesCard({ onPay, onView }: InvoicesCardProps) {
   const [page, setPage] = useState(1);
   const invoicesQuery = useInvoices({ page, per_page: PER_PAGE });
   const invoices = invoicesQuery.data?.data ?? [];
@@ -42,13 +46,13 @@ export function InvoicesCard() {
       <Card className="p-6">
         <h2 className="font-display text-headline-md text-on-surface">Invoices</h2>
         <p className="mt-1 mb-5 text-body-sm text-on-surface-variant">
-          Every invoice issued to your account.
+          Pay an installment and upload your receipt — the finance team verifies it.
         </p>
 
         {invoicesQuery.isLoading ? (
           <div className="space-y-3">
             {Array.from({ length: 4 }, (_, index) => (
-              <Skeleton key={index} className="h-20 w-full rounded-xl" />
+              <Skeleton key={index} className="h-24 w-full rounded-xl" />
             ))}
           </div>
         ) : invoicesQuery.isError ? (
@@ -72,7 +76,7 @@ export function InvoicesCard() {
               )}
             >
               {invoices.map((invoice) => (
-                <InvoiceRow key={invoice.id} invoice={invoice} />
+                <InvoiceRow key={invoice.id} invoice={invoice} onPay={onPay} onView={onView} />
               ))}
             </ul>
             {invoicesQuery.data && (
@@ -85,10 +89,18 @@ export function InvoicesCard() {
   );
 }
 
-function InvoiceRow({ invoice }: { invoice: Invoice }) {
-  const payInvoice = usePayInvoice();
+function InvoiceRow({
+  invoice,
+  onPay,
+  onView,
+}: {
+  invoice: Invoice;
+  onPay: (invoice: Invoice) => void;
+  onView: (invoice: Invoice) => void;
+}) {
   const status = statusConfig[invoice.status];
   const payable = invoice.status === "open" || invoice.status === "past_due";
+  const rejected = invoice.latest_submission?.status === "rejected" && payable;
 
   return (
     <li className="rounded-xl border border-outline-variant/40 p-4">
@@ -109,6 +121,19 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
         </Badge>
       </div>
 
+      {invoice.status === "pending" && invoice.latest_submission && (
+        <p className="mt-3 rounded-lg bg-warning-container/60 px-3 py-2 text-body-sm text-on-warning-container">
+          Receipt {invoice.latest_submission.reference_no} submitted{" "}
+          {formatDate(invoice.latest_submission.created_at)} — awaiting verification.
+        </p>
+      )}
+
+      {rejected && (
+        <p className="mt-3 rounded-lg bg-error-container/60 px-3 py-2 text-body-sm text-on-error-container">
+          <span className="font-semibold">Rejected:</span> {invoice.latest_submission?.rejection_reason}
+        </p>
+      )}
+
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-body-md font-semibold text-on-surface">
@@ -123,6 +148,15 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-8"
+            onClick={() => onView(invoice)}
+            aria-label={`View invoice ${invoice.number}`}
+          >
+            <Eye className="size-4" aria-hidden="true" />
+          </Button>
           {invoice.download_url && (
             <Button variant="ghost" size="icon" className="size-8" asChild>
               <a href={invoice.download_url} download aria-label={`Download invoice ${invoice.number}`}>
@@ -131,17 +165,9 @@ function InvoiceRow({ invoice }: { invoice: Invoice }) {
             </Button>
           )}
           {payable && (
-            <Button
-              size="sm"
-              disabled={payInvoice.isPending}
-              onClick={() =>
-                payInvoice.mutate(invoice.id, {
-                  onError: () => toast.error("Couldn't start the payment. Please try again."),
-                })
-              }
-            >
-              {payInvoice.isPending && <Spinner className="size-4 text-on-primary" />}
-              Pay
+            <Button size="sm" onClick={() => onPay(invoice)}>
+              {rejected && <RotateCcw className="size-4" aria-hidden="true" />}
+              {rejected ? "Resubmit" : "Pay"}
             </Button>
           )}
         </div>

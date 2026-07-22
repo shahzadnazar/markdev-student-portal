@@ -75,7 +75,8 @@ export function formatMoney(amount: number | null | undefined, currency = "USD")
   return new Intl.NumberFormat("en", {
     style: "currency",
     currency,
-    minimumFractionDigits: 2,
+    currencyDisplay: "narrowSymbol",
+    minimumFractionDigits: amount % 1 === 0 ? 0 : 2,
   }).format(amount);
 }
 

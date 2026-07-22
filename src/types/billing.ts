@@ -12,7 +12,7 @@ export interface PaymentMethodSummary {
   label: string;
 }
 
-export type TransactionStatus = "success" | "pending" | "failed" | "refunded";
+export type TransactionStatus = "success" | "pending" | "rejected" | "failed" | "refunded";
 
 export interface Transaction {
   id: number;
@@ -27,9 +27,17 @@ export interface Transaction {
   status: TransactionStatus;
   created_at: string;
   receipt_url: string | null;
+  payer_name: string | null;
+  bank_name: string | null;
+  reference_no: string | null;
+  payment_date: string | null;
+  notes: string | null;
+  submitted_by_student: boolean;
+  rejection_reason: string | null;
+  reviewed_at: string | null;
 }
 
-export type InvoiceStatus = "open" | "paid" | "past_due" | "void";
+export type InvoiceStatus = "open" | "pending" | "paid" | "past_due" | "void";
 
 export interface Invoice {
   id: number;
@@ -43,6 +51,8 @@ export interface Invoice {
   due_at: string | null;
   paid_at: string | null;
   download_url: string | null;
+  /** Most recent student fee submission, when the endpoint includes it. */
+  latest_submission?: Transaction | null;
 }
 
 export interface BillingOverview {
@@ -62,6 +72,27 @@ export interface BillingOverview {
   next_invoice: Invoice | null;
   /** Downloadable account statement (PDF), when available. */
   statement_url: string | null;
+  /** Sum of invoices currently under admin review. */
+  pending_review_amount: number;
+  /** The invoice whose submission is being reviewed, if any. */
+  pending_invoice: Invoice | null;
+  /** Accounts a student can pay into (JazzCash, bank transfer, ...). */
+  payment_channels: PaymentChannel[];
+  support_phone: string | null;
+}
+
+export interface PaymentChannel {
+  value: string;
+  label: string;
+}
+
+export interface SubmitFeePayload {
+  channel: string;
+  payer_name: string;
+  reference_no: string;
+  payment_date: string;
+  notes?: string;
+  receipt: File;
 }
 
 export interface TransactionListParams extends ListParams {
@@ -72,10 +103,4 @@ export interface TransactionListParams extends ListParams {
 
 export interface InvoiceListParams extends ListParams {
   status?: InvoiceStatus;
-}
-
-/** Response of pay/retry: either a hosted checkout redirect or a settled transaction. */
-export interface PaymentIntentResponse {
-  checkout_url: string | null;
-  transaction: Transaction | null;
 }

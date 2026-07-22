@@ -4,7 +4,7 @@ import type {
   Invoice,
   InvoiceListParams,
   Paginated,
-  PaymentIntentResponse,
+  SubmitFeePayload,
   Transaction,
   TransactionListParams,
 } from "@/types";
@@ -22,13 +22,17 @@ export const billingRepository = {
     return getRaw<Paginated<Invoice>>("/billing/invoices", { params });
   },
 
-  /** Starts payment of an open invoice — may hand back a hosted checkout URL. */
-  payInvoice(invoiceId: number | string) {
-    return post<PaymentIntentResponse>(`/billing/invoices/${invoiceId}/pay`);
-  },
-
-  /** Retries a failed transaction. */
-  retryTransaction(transactionId: number | string) {
-    return post<PaymentIntentResponse>(`/billing/transactions/${transactionId}/retry`);
+  /** Uploads proof of payment; the submission awaits admin verification. */
+  submitPayment(invoiceId: number | string, payload: SubmitFeePayload) {
+    const form = new FormData();
+    form.append("channel", payload.channel);
+    form.append("payer_name", payload.payer_name);
+    form.append("reference_no", payload.reference_no);
+    form.append("payment_date", payload.payment_date);
+    if (payload.notes) form.append("notes", payload.notes);
+    form.append("receipt", payload.receipt);
+    return post<Transaction>(`/billing/invoices/${invoiceId}/submissions`, form, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
   },
 };
