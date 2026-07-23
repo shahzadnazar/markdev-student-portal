@@ -19,7 +19,8 @@ const statusConfig: Record<
   InvoiceStatus,
   { label: string; variant: NonNullable<VariantProps<typeof badgeVariants>["variant"]> }
 > = {
-  open: { label: "Open", variant: "primary" },
+  upcoming: { label: "Upcoming", variant: "neutral" },
+  open: { label: "Active", variant: "primary" },
   pending: { label: "Under review", variant: "warning" },
   paid: { label: "Paid", variant: "success" },
   past_due: { label: "Past due", variant: "error" },
@@ -44,9 +45,9 @@ export function InvoicesCard({ onPay, onView }: InvoicesCardProps) {
       transition={{ duration: 0.35, delay: 0.25, ease: "easeOut" }}
     >
       <Card className="p-6">
-        <h2 className="font-display text-headline-md text-on-surface">Invoices</h2>
+        <h2 className="font-display text-headline-md text-on-surface">Installments</h2>
         <p className="mt-1 mb-5 text-body-sm text-on-surface-variant">
-          Pay an installment and upload your receipt — the finance team verifies it.
+          Only the current installment is payable — future months open 5 days before their due date.
         </p>
 
         {invoicesQuery.isLoading ? (
@@ -101,9 +102,15 @@ function InvoiceRow({
   const status = statusConfig[invoice.status];
   const payable = invoice.status === "open" || invoice.status === "past_due";
   const rejected = invoice.latest_submission?.status === "rejected" && payable;
+  const upcoming = invoice.status === "upcoming";
 
   return (
-    <li className="rounded-xl border border-outline-variant/40 p-4">
+    <li
+      className={cn(
+        "rounded-xl border border-outline-variant/40 p-4",
+        upcoming && "opacity-60",
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
@@ -128,6 +135,22 @@ function InvoiceRow({
         </p>
       )}
 
+      {invoice.status === "open" && invoice.in_grace && (
+        <p className="mt-3 rounded-lg bg-warning-container/60 px-3 py-2 text-body-sm text-on-warning-container">
+          <span className="font-semibold">Due date passed.</span> Pay now to avoid the daily
+          defaulter fine.
+        </p>
+      )}
+
+      {invoice.status === "past_due" && invoice.fine_amount > 0 && (
+        <p className="mt-3 rounded-lg bg-error-container/60 px-3 py-2 text-body-sm text-on-error-container">
+          <span className="font-semibold">Defaulter fine:</span>{" "}
+          {formatMoney(invoice.fine_amount, invoice.currency)} added ({invoice.fine_days}{" "}
+          {invoice.fine_days === 1 ? "day" : "days"} overdue) — total payable{" "}
+          <span className="font-semibold">{formatMoney(invoice.payable_total, invoice.currency)}</span>.
+        </p>
+      )}
+
       {rejected && (
         <p className="mt-3 rounded-lg bg-error-container/60 px-3 py-2 text-body-sm text-on-error-container">
           <span className="font-semibold">Rejected:</span> {invoice.latest_submission?.rejection_reason}
@@ -137,14 +160,16 @@ function InvoiceRow({
       <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-body-md font-semibold text-on-surface">
-            {formatMoney(invoice.amount, invoice.currency)}
+            {formatMoney(payable ? invoice.payable_total : invoice.amount, invoice.currency)}
           </p>
           <p className="font-mono text-label-sm text-on-surface-variant">
             {invoice.status === "paid" && invoice.paid_at
               ? `Paid ${formatDate(invoice.paid_at)}`
-              : invoice.due_at
-                ? `Due ${formatDate(invoice.due_at)}`
-                : `Issued ${formatDate(invoice.issued_at)}`}
+              : upcoming && invoice.activates_at
+                ? `Opens ${formatDate(invoice.activates_at)} · due ${formatDate(invoice.due_at)}`
+                : invoice.due_at
+                  ? `Due ${formatDate(invoice.due_at)}`
+                  : `Issued ${formatDate(invoice.issued_at)}`}
           </p>
         </div>
         <div className="flex items-center gap-2">

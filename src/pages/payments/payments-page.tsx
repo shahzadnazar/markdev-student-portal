@@ -131,6 +131,12 @@ function BillingHero({ overview }: { overview: BillingOverview }) {
                   Billing active
                 </span>
               )}
+              {overview.installments && (
+                <span className="rounded-full bg-white/20 px-3 py-1 font-mono text-label-sm uppercase">
+                  {overview.installments.paid_count}/{overview.installments.months} installments paid
+                  · due day {overview.installments.due_day}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -166,6 +172,9 @@ function BillingStatCards({
 }) {
   const settled = overview.remaining_amount <= 0;
   const underReview = overview.pending_invoice !== null;
+  const active = overview.next_invoice;
+  const defaulted = active?.status === "past_due";
+  const inGrace = active?.status === "open" && active.in_grace;
   const cycleLabel = overview.billing_cycle
     ? (cycleLabels[overview.billing_cycle] ?? overview.billing_cycle)
     : null;
@@ -263,6 +272,20 @@ function BillingStatCards({
                 <p className="mt-2 rounded-lg bg-warning-container/60 px-3 py-2 text-body-sm text-on-warning-container">
                   {formatMoney(overview.pending_review_amount, overview.currency)} under review —
                   we'll notify you once it's verified.
+                </p>
+              )}
+              {inGrace && (
+                <p className="mt-2 rounded-lg bg-warning-container/60 px-3 py-2 text-body-sm text-on-warning-container">
+                  <span className="font-semibold">Due date passed.</span> Pay now to avoid a fine of{" "}
+                  {formatMoney(overview.installments?.fine_per_day ?? 0, overview.currency)}/day.
+                </p>
+              )}
+              {defaulted && active && (
+                <p className="mt-2 rounded-lg bg-error-container/60 px-3 py-2 text-body-sm text-on-error-container">
+                  <span className="font-semibold">Defaulter:</span>{" "}
+                  {formatMoney(active.fine_amount, active.currency)} fine added ({active.fine_days}{" "}
+                  days) — {formatMoney(overview.installments?.fine_per_day ?? 0, overview.currency)}
+                  /day keeps adding until you pay.
                 </p>
               )}
               <Button

@@ -37,18 +37,30 @@ export interface Transaction {
   reviewed_at: string | null;
 }
 
-export type InvoiceStatus = "open" | "pending" | "paid" | "past_due" | "void";
+export type InvoiceStatus = "upcoming" | "open" | "pending" | "paid" | "past_due" | "void";
 
 export interface Invoice {
   id: number;
   /** Public number, e.g. "INV-2026-0042". */
   number: string;
+  /** 1-based installment position when part of a monthly plan. */
+  sequence_no: number | null;
   title: string | null;
   amount: number;
+  /** Accrued defaulter fine so far. */
+  fine_amount: number;
+  fine_days: number;
+  /** Installment + fine — what the student actually pays. */
+  payable_total: number;
   currency: string;
   status: InvoiceStatus;
   issued_at: string;
+  /** When the installment opens for payment. */
+  activates_at: string | null;
   due_at: string | null;
+  /** Due date passed but still inside the warning window. */
+  in_grace: boolean;
+  days_overdue: number;
   paid_at: string | null;
   download_url: string | null;
   /** Most recent student fee submission, when the endpoint includes it. */
@@ -79,6 +91,18 @@ export interface BillingOverview {
   /** Accounts a student can pay into (JazzCash, bank transfer, ...). */
   payment_channels: PaymentChannel[];
   support_phone: string | null;
+  /** Present when the plan is a monthly installment schedule. */
+  installments: InstallmentInfo | null;
+}
+
+export interface InstallmentInfo {
+  months: number;
+  due_day: number;
+  fine_per_day: number;
+  grace_days: number;
+  activation_days: number;
+  paid_count: number;
+  defaulted_fine_total: number;
 }
 
 export interface PaymentChannel {

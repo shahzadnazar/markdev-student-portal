@@ -11,6 +11,7 @@ const statusConfig: Record<
   Invoice["status"],
   { label: string; variant: NonNullable<VariantProps<typeof badgeVariants>["variant"]> }
 > = {
+  upcoming: { label: "Upcoming", variant: "neutral" },
   open: { label: "Open", variant: "primary" },
   pending: { label: "Under review", variant: "warning" },
   paid: { label: "Paid", variant: "success" },
@@ -82,10 +83,18 @@ export function InvoiceDialog({ invoice, onClose }: InvoiceDialogProps) {
                   {formatMoney(invoice.amount, invoice.currency)}
                 </p>
               </div>
+              {invoice.fine_amount > 0 && (
+                <div className="flex items-center justify-between gap-4 border-b border-outline-variant/40 pb-3">
+                  <p className="text-body-md text-error">Defaulter fine ({invoice.fine_days} days)</p>
+                  <p className="font-mono text-body-md text-error">
+                    {formatMoney(invoice.fine_amount, invoice.currency)}
+                  </p>
+                </div>
+              )}
               <div className="flex items-center justify-between gap-4 border-b border-outline-variant/40 pb-3">
                 <p className="text-body-md text-on-surface-variant">Remaining fee</p>
                 <p className="font-mono text-body-md text-on-surface-variant">
-                  {formatMoney(paid ? 0 : invoice.amount, invoice.currency)}
+                  {formatMoney(paid ? 0 : invoice.payable_total, invoice.currency)}
                 </p>
               </div>
             </div>

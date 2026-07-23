@@ -163,12 +163,20 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                       <dd className="mt-0.5 font-mono text-body-sm text-on-surface">{invoice.number}</dd>
                     </div>
                     <div className="text-right">
-                      <dt className="font-mono text-label-sm text-on-surface-variant">Total fee</dt>
+                      <dt className="font-mono text-label-sm text-on-surface-variant">Total payable</dt>
                       <dd className="mt-0.5 font-display text-headline-md text-primary">
-                        {formatMoney(invoice.amount, invoice.currency)}
+                        {formatMoney(invoice.payable_total, invoice.currency)}
                       </dd>
                     </div>
                   </div>
+                  {invoice.fine_amount > 0 && (
+                    <p className="rounded-lg bg-error-container/50 px-3 py-2 text-body-sm text-on-error-container">
+                      Includes a defaulter fine of{" "}
+                      <span className="font-semibold">{formatMoney(invoice.fine_amount, invoice.currency)}</span>{" "}
+                      ({invoice.fine_days} {invoice.fine_days === 1 ? "day" : "days"} overdue) on top of the{" "}
+                      {formatMoney(invoice.amount, invoice.currency)} installment.
+                    </p>
+                  )}
                 </dl>
               </div>
 
