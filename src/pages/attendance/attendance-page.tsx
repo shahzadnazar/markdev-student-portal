@@ -29,11 +29,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAttendance, useAttendanceSummary } from "@/hooks/use-engagement";
+import { useAttendance, useAttendanceSummary, useDailyAttendance } from "@/hooks/use-engagement";
 import { formatDate, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { paths } from "@/routes/paths";
-import type { AttendanceRecord, AttendanceStatus } from "@/types";
+import type { AttendanceRecord, AttendanceStatus, DailyAttendanceStatus } from "@/types";
 
 const PER_PAGE = 10;
 
@@ -55,6 +55,16 @@ const statusBadge: Record<
   late: { variant: "warning", label: "Late" },
   absent: { variant: "error", label: "Absent" },
   excused: { variant: "neutral", label: "Excused" },
+};
+
+const dailyBadge: Record<
+  DailyAttendanceStatus,
+  { variant: "success" | "warning" | "error" | "neutral"; label: string }
+> = {
+  present: { variant: "success", label: "Present" },
+  late: { variant: "warning", label: "Late" },
+  absent: { variant: "error", label: "Absent" },
+  leave: { variant: "neutral", label: "Leave" },
 };
 
 /** Shared column template for the desktop table header and rows. */
@@ -99,6 +109,8 @@ export default function AttendancePage() {
   };
 
   const records = attendanceQuery.data?.data ?? [];
+  const dailyQuery = useDailyAttendance({ per_page: 14 });
+  const dailyRecords = dailyQuery.data?.data ?? [];
 
   return (
     <div>
@@ -160,6 +172,74 @@ export default function AttendancePage() {
           </div>
         ) : null}
       </section>
+
+      {/* Daily register */}
+      <motion.section
+        aria-label="Daily attendance"
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, delay: 0.03, ease: "easeOut" }}
+        className="mb-8"
+      >
+        <Card className="gap-0 p-6">
+          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
+            <div>
+              <h2 className="font-display text-base font-semibold text-on-surface">Daily attendance</h2>
+              <p className="text-sm text-on-surface-variant">
+                Your day-by-day record at the academy — marked at the front desk or by the biometric terminal.
+              </p>
+            </div>
+            {dailyQuery.data ? (
+              <span className="font-mono text-xs text-on-surface-variant/70">
+                last {dailyRecords.length} of {dailyQuery.data.meta.total} days
+              </span>
+            ) : null}
+          </div>
+
+          {dailyQuery.isLoading ? (
+            <div className="grid gap-2 sm:grid-cols-2">
+              {Array.from({ length: 4 }, (_, index) => (
+                <Skeleton key={index} className="h-12 rounded-xl" />
+              ))}
+            </div>
+          ) : dailyQuery.isError ? (
+            <ErrorState
+              title="Couldn't load your daily attendance"
+              error={dailyQuery.error}
+              onRetry={() => {
+                void dailyQuery.refetch();
+              }}
+              className="py-8"
+            />
+          ) : dailyRecords.length === 0 ? (
+            <p className="rounded-xl bg-surface-ice/60 px-4 py-6 text-center text-sm text-on-surface-variant">
+              No daily attendance has been marked for you yet.
+            </p>
+          ) : (
+            <ul className="grid gap-2 sm:grid-cols-2">
+              {dailyRecords.map((day) => (
+                <li
+                  key={day.id}
+                  className="flex items-center gap-3 rounded-xl border border-outline/10 bg-surface px-4 py-3"
+                >
+                  <span className="w-24 shrink-0 font-mono text-xs text-on-surface-variant">
+                    {format(parseISO(day.date), "EEE, MMM d")}
+                  </span>
+                  <Badge variant={dailyBadge[day.status].variant}>{dailyBadge[day.status].label}</Badge>
+                  <span className="min-w-0 flex-1 truncate text-sm text-on-surface-variant" title={day.remarks ?? undefined}>
+                    {day.remarks ?? ""}
+                  </span>
+                  {day.corrected ? (
+                    <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-on-surface-variant/60">
+                      corrected
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Card>
+      </motion.section>
 
       {/* Filters */}
       <motion.section

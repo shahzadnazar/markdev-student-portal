@@ -20,6 +20,7 @@ import type {
   ProgressOverview,
   SearchResults,
   UserSettings,
+  DailyAttendancePage,
 } from "@/types";
 
 export const dashboardRepository = {
@@ -35,6 +36,10 @@ export const attendanceRepository = {
 
   summary(params: Pick<AttendanceParams, "course_id" | "from" | "to"> = {}) {
     return get<AttendanceSummary>("/attendance/summary", { params });
+  },
+
+  daily(params: { page?: number; per_page?: number } = {}) {
+    return getRaw<DailyAttendancePage>("/attendance/daily", { params });
   },
 };
 

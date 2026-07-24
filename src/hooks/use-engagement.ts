@@ -36,6 +36,14 @@ export function useAttendance(params: AttendanceParams = {}) {
   });
 }
 
+export function useDailyAttendance(params: { page?: number; per_page?: number } = {}) {
+  return useQuery({
+    queryKey: qk.attendanceDaily(params),
+    queryFn: () => attendanceRepository.daily(params),
+    placeholderData: (previous) => previous,
+  });
+}
+
 export function useAttendanceSummary(params: Pick<AttendanceParams, "course_id" | "from" | "to"> = {}) {
   return useQuery({
     queryKey: qk.attendanceSummary(params),

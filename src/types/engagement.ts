@@ -24,6 +24,30 @@ export interface AttendanceSummary {
   attendance_rate: number;
 }
 
+export type DailyAttendanceStatus = "present" | "late" | "absent" | "leave";
+
+/** One row of the academy's daily register (front desk or biometric). */
+export interface DailyAttendanceRecord {
+  id: number;
+  date: string;
+  status: DailyAttendanceStatus;
+  remarks: string | null;
+  source: "manual" | "biometric";
+  marked_at: string | null;
+  /** True when staff corrected the record after marking. */
+  corrected: boolean;
+}
+
+export interface DailyAttendancePage {
+  data: DailyAttendanceRecord[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
 export interface AttendanceParams extends ListParams {
   course_id?: number;
   from?: string;

@@ -63,6 +63,7 @@ Conventions:
 | GET | `/dashboard` | Aggregated stats, continue-learning, upcoming events, activity series |
 | GET | `/attendance` | *paginated*; filters: `course_id`, `from`, `to`, `status` |
 | GET | `/attendance/summary` | Counts + `attendance_rate` |
+| GET | `/attendance/daily` | *paginated*; the academy's daily register for the student — `{date, status: present|late|absent|leave, remarks, source: manual|biometric, marked_at, corrected}` |
 | GET | `/certificates` | Issued certificates with `download_url` |
 | GET | `/progress` | Overview + per-course progress |
 | GET | `/leaderboard?period=weekly\|monthly\|all_time` | Entries + the caller's own row |
