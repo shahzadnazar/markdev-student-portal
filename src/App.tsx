@@ -17,7 +17,7 @@ export default function App() {
           toastOptions={{
             style: {
               borderRadius: "0.75rem",
-              boxShadow: "0px 12px 32px rgba(12, 90, 189, 0.12)",
+              boxShadow: "var(--shadow-elevated)",
             },
           }}
         />

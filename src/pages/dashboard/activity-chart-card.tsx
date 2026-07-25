@@ -1,3 +1,4 @@
+import { cssToken } from "@/lib/css-token";
 import { format, parseISO } from "date-fns";
 import {
   Area,
@@ -20,7 +21,7 @@ type ActivityPoint = DashboardData["activity"][number];
  * SVG presentation attributes are the one place we can't lean on classes.
  */
 const chart = {
-  stroke: "#0c5abd", // --color-primary (Deep Ocean Blue)
+  stroke: cssToken("--color-primary", "#124389"),
   grid: "#e8e8ea", // --color-surface-container-high
   tick: "#727784", // --color-outline
 } as const;

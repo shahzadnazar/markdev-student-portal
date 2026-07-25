@@ -1,3 +1,4 @@
+import { cssToken } from "@/lib/css-token";
 import { useMemo } from "react";
 import { format, parseISO, startOfWeek } from "date-fns";
 import {
@@ -26,7 +27,7 @@ interface WeeklyPoint {
  * SVG presentation attributes are the one place we can't lean on classes.
  */
 const chart = {
-  bar: "#0c5abd", // --color-primary (Deep Ocean Blue)
+  bar: cssToken("--color-primary", "#124389"),
   grid: "#e8e8ea", // --color-surface-container-high
   tick: "#727784", // --color-outline
 } as const;
@@ -133,7 +134,7 @@ export function ProgressActivityCard({ activity }: ProgressActivityCardProps) {
                 />
                 <Tooltip
                   content={<WeeklyTooltip />}
-                  cursor={{ fill: "rgba(12, 90, 189, 0.06)" }}
+                  cursor={{ fill: "rgba(18, 67, 137, 0.06)" }}
                 />
                 <Bar
                   dataKey="minutes"

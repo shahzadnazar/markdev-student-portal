@@ -7,11 +7,11 @@
  * MarkDev LMS design system — implemented from docs/DESIGN.md.
  *
  * Brand mapping (per the design doc prose):
- *  - `primary`   → Deep Ocean Blue #0C5ABD, the driver for actions and brand identity.
- *  - `primary-deep` → #004393, the darker tonal step used for hover/pressed states.
+ *  - `primary`   → Brand Navy #124389 (approved primary-600), the driver for actions and identity.
+ *  - `primary-deep` → #0F376F (primary-700), the darker tonal step used for hover/pressed states.
  *  - `secondary` → Accent Purple #6B53C4, for secondary CTAs, progress and
  *    "enlightenment" moments.
- *  - `surface-ice` → #F5F9FF, the foundational app background.
+ *  - `surface-ice` → #EEF4FB (primary-50), the foundational app background.
  * `success` and `warning` are pragmatic extensions (status chips for
  * submissions/attendance) tuned to sit quietly next to the core palette.
  */
@@ -30,7 +30,7 @@
   --color-surface-container-high: #e8e8ea;
   --color-surface-container-highest: #e2e2e5;
   --color-surface-variant: #e2e2e5;
-  --color-surface-ice: #f5f9ff;
+  --color-surface-ice: #eef4fb;
   --color-on-surface: #1a1c1e;
   --color-on-surface-variant: #424753;
   --color-inverse-surface: #2f3133;
@@ -41,16 +41,18 @@
   --color-outline-variant: #c2c6d5;
 
   /* Primary — Deep Ocean Blue */
-  --color-primary: #0c5abd;
-  --color-primary-deep: #004393;
+  --color-primary: #124389;
+  --color-primary-bright: #1d5aa6;
+  --color-accent: #1fbbeb;
+  --color-primary-deep: #0f376f;
   --color-on-primary: #ffffff;
-  --color-primary-container: #d8e2ff;
-  --color-on-primary-container: #001a41;
-  --color-inverse-primary: #adc6ff;
-  --color-primary-fixed: #d8e2ff;
-  --color-primary-fixed-dim: #adc6ff;
-  --color-on-primary-fixed: #001a41;
-  --color-on-primary-fixed-variant: #004494;
+  --color-primary-container: #dce9f7;
+  --color-on-primary-container: #0f376f;
+  --color-inverse-primary: #a8cbf2;
+  --color-primary-fixed: #dce9f7;
+  --color-primary-fixed-dim: #a8cbf2;
+  --color-on-primary-fixed: #0f376f;
+  --color-on-primary-fixed-variant: #124389;
   --color-surface-tint: #0e5bbe;
 
   /* Secondary — Accent Purple */
@@ -121,15 +123,15 @@
   --text-label-sm--font-weight: 500;
 
   /* Elevation — primary-tinted "glow" shadows, never grey smudges */
-  --shadow-card: 0px 4px 20px rgba(12, 90, 189, 0.05);
-  --shadow-elevated: 0px 12px 32px rgba(12, 90, 189, 0.12);
+  --shadow-card: 0px 4px 20px rgba(18, 67, 137, 0.05);
+  --shadow-elevated: 0px 12px 32px rgba(18, 67, 137, 0.12);
 
   /* Layout rhythm */
   --spacing-sidebar: 17.5rem; /* 280px persistent sidebar */
   --spacing-shell: 90rem; /* 1440px max content width */
 
   /* Brand gradient — primary → secondary, denotes activity/premium states */
-  --gradient-brand: linear-gradient(135deg, #0c5abd 0%, #6b53c4 100%);
+  --gradient-brand: linear-gradient(135deg, #124389 0%, #6b53c4 100%);
 }
 
 @layer base {
