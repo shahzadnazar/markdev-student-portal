@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Download, Eye, FileText, RotateCcw } from "lucide-react";
 import { useState } from "react";
 import { ErrorState } from "@/components/shared/error-state";
-import { Badge, type badgeVariants } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PaginationBar } from "@/components/ui/pagination";
@@ -10,22 +10,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useInvoices } from "@/hooks/use-billing";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Invoice, InvoiceStatus } from "@/types";
-import type { VariantProps } from "class-variance-authority";
+import { invoiceStatusConfig } from "@/lib/status";
+import type { Invoice } from "@/types";
 
 const PER_PAGE = 5;
 
-const statusConfig: Record<
-  InvoiceStatus,
-  { label: string; variant: NonNullable<VariantProps<typeof badgeVariants>["variant"]> }
-> = {
-  upcoming: { label: "Upcoming", variant: "neutral" },
-  open: { label: "Active", variant: "primary" },
-  pending: { label: "Under review", variant: "warning" },
-  paid: { label: "Paid", variant: "success" },
-  past_due: { label: "Past due", variant: "error" },
-  void: { label: "Void", variant: "neutral" },
-};
+const statusConfig = invoiceStatusConfig;
 
 interface InvoicesCardProps {
   onPay: (invoice: Invoice) => void;

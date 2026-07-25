@@ -1,23 +1,13 @@
+import { invoiceStatusConfig } from "@/lib/status";
 import { Download, Layers } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 import { formatDate, formatMoney } from "@/lib/format";
 import type { Invoice } from "@/types";
-import { Badge, type badgeVariants } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import type { VariantProps } from "class-variance-authority";
 
-const statusConfig: Record<
-  Invoice["status"],
-  { label: string; variant: NonNullable<VariantProps<typeof badgeVariants>["variant"]> }
-> = {
-  upcoming: { label: "Upcoming", variant: "neutral" },
-  open: { label: "Open", variant: "primary" },
-  pending: { label: "Under review", variant: "warning" },
-  paid: { label: "Paid", variant: "success" },
-  past_due: { label: "Past due", variant: "error" },
-  void: { label: "Void", variant: "neutral" },
-};
+const statusConfig = invoiceStatusConfig;
 
 interface InvoiceDialogProps {
   invoice: Invoice | null;

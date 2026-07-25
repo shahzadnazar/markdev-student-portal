@@ -17,6 +17,8 @@ const buttonVariants = cva(
           "bg-transparent text-on-surface hover:bg-surface-container-low",
         success:
           "bg-success text-white hover:-translate-y-px hover:bg-success/90 active:translate-y-0",
+        warning:
+          "bg-warning text-white hover:-translate-y-px hover:bg-warning/90 active:translate-y-0",
         destructive:
           "bg-error text-on-error hover:-translate-y-px hover:bg-error/90 active:translate-y-0",
         link: "text-primary underline-offset-4 hover:underline",

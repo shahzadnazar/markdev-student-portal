@@ -15,7 +15,7 @@ export function PageLoader({ fullScreen = false, label = "Loading", className }:
       aria-live="polite"
       className={cn(
         "flex flex-col items-center justify-center gap-3",
-        fullScreen ? "min-h-screen bg-surface-ice" : "min-h-64 w-full py-16",
+        fullScreen ? "min-h-screen bg-surface-ice" : "min-h-64 w-full py-10",
         className,
       )}
     >

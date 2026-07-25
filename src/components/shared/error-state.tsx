@@ -20,7 +20,7 @@ export function ErrorState({ error, title = "Something went wrong", onRetry, cla
     <div
       role="alert"
       className={cn(
-        "flex flex-col items-center justify-center rounded-2xl border border-error/20 bg-error-container/30 px-6 py-16 text-center",
+        "flex flex-col items-center justify-center rounded-2xl border border-error/20 bg-error-container/30 px-6 py-10 text-center",
         className,
       )}
     >

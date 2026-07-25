@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from "framer-motion";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { Sidebar } from "./sidebar";
@@ -24,31 +24,19 @@ export function AppShell() {
         <Sidebar />
       </div>
 
-      {/* Mobile drawer */}
-      <AnimatePresence>
-        {drawerOpen && (
-          <>
-            <motion.button
-              type="button"
-              aria-label="Close navigation"
-              className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setDrawerOpen(false)}
-            />
-            <motion.div
-              className="fixed inset-y-0 left-0 z-50 lg:hidden"
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 380, damping: 36 }}
-            >
-              <Sidebar onNavigate={() => setDrawerOpen(false)} />
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+      {/* Mobile drawer — Radix dialog gives focus trap, Escape and aria-modal */}
+      <DialogPrimitive.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity lg:hidden" />
+          <DialogPrimitive.Content
+            aria-describedby={undefined}
+            className="fixed inset-y-0 left-0 z-50 transition-transform duration-200 data-[state=closed]:-translate-x-full data-[state=open]:translate-x-0 lg:hidden"
+          >
+            <DialogPrimitive.Title className="sr-only">Navigation</DialogPrimitive.Title>
+            <Sidebar onNavigate={() => setDrawerOpen(false)} />
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
 
       <div className="flex min-w-0 flex-1 flex-col lg:pl-sidebar">
         <Topbar onOpenSidebar={() => setDrawerOpen(true)} />

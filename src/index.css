@@ -150,12 +150,11 @@
     @apply font-display;
   }
 
-  /* Focus halo: 2px ring of 20% primary, per the input spec */
+  /* Focus ring: outline-based so overflow-hidden ancestors can't clip it */
   :focus-visible {
-    outline: none;
-    box-shadow:
-      0 0 0 1px var(--color-primary),
-      0 0 0 4px color-mix(in srgb, var(--color-primary) 20%, transparent);
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+    box-shadow: none;
   }
 
   ::selection {

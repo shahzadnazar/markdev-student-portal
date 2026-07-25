@@ -10,6 +10,7 @@ import { ApiError } from "@/api/client";
 import { authRepository } from "@/api/repositories";
 import { FormError, FormField } from "@/components/shared/form-field";
 import { PageHeader } from "@/components/shared/page-header";
+import { PageLoader } from "@/components/shared/page-loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,15 @@ interface UserCardProps {
 export default function ProfilePage() {
   const { user, setUser } = useAuth();
 
-  if (!user) return null;
+  // The auth context hydrates on app start — show a loader instead of a blank page.
+  if (!user) {
+    return (
+      <div>
+        <PageHeader eyebrow="Account" title="Profile" description="How you appear across MarkDev." />
+        <PageLoader label="Loading your profile" />
+      </div>
+    );
+  }
 
   return (
     <div>

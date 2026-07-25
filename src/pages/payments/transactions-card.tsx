@@ -1,10 +1,11 @@
+import { transactionStatusConfig } from "@/lib/status";
 import { motion } from "framer-motion";
 import type { LucideIcon } from "lucide-react";
 import { Banknote, CreditCard, Landmark, Receipt, ReceiptText, Wallet } from "lucide-react";
 import { useState } from "react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
-import { Badge, type badgeVariants } from "@/components/ui/badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PaginationBar } from "@/components/ui/pagination";
@@ -16,12 +17,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTransactions } from "@/hooks/use-billing";
 import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { PaymentMethodType, Transaction, TransactionStatus } from "@/types";
-import type { VariantProps } from "class-variance-authority";
 
 const PER_PAGE = 8;
 
@@ -35,16 +35,7 @@ const methodIcons: Record<PaymentMethodType, LucideIcon> = {
   other: Receipt,
 };
 
-const statusConfig: Record<
-  TransactionStatus,
-  { label: string; variant: NonNullable<VariantProps<typeof badgeVariants>["variant"]> }
-> = {
-  success: { label: "Verified", variant: "success" },
-  pending: { label: "Under review", variant: "warning" },
-  rejected: { label: "Rejected", variant: "error" },
-  failed: { label: "Failed", variant: "error" },
-  refunded: { label: "Refunded", variant: "neutral" },
-};
+const statusConfig = transactionStatusConfig;
 
 export function TransactionsCard({ currency }: { currency: string }) {
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -181,8 +172,7 @@ export function TransactionsCard({ currency }: { currency: string }) {
 function TransactionActions({ transaction }: { transaction: Transaction }) {
   if (transaction.receipt_url) {
     return (
-      <TooltipProvider>
-        <Tooltip>
+      <Tooltip>
           <TooltipTrigger asChild>
             <Button variant="ghost" size="icon" className="size-8" asChild>
               <a
@@ -196,8 +186,7 @@ function TransactionActions({ transaction }: { transaction: Transaction }) {
             </Button>
           </TooltipTrigger>
           <TooltipContent>View receipt</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      </Tooltip>
     );
   }
 
