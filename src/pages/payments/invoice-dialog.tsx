@@ -33,7 +33,7 @@ export function InvoiceDialog({ invoice, onClose }: InvoiceDialogProps) {
             <Layers className="size-4" aria-hidden="true" />
             Invoice
           </p>
-          <DialogTitle className="mt-1 font-display text-headline-lg text-white">
+          <DialogTitle className="mt-1 font-display text-headline-md text-white">
             {invoice.number}
           </DialogTitle>
         </div>

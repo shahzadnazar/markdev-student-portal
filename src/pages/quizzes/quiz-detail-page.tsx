@@ -91,7 +91,7 @@ export default function QuizDetailPage() {
     <div>
       <BackLink />
       <PageHeader
-        eyebrow={quiz.course.title}
+        crumbs={[{ label: "Quizzes", to: "/quizzes" }, { label: quiz.title }]}
         title={quiz.title}
         description={quiz.description ?? undefined}
       />
@@ -247,7 +247,7 @@ function StandingCard({
         <div className="flex items-end justify-between gap-4 rounded-xl bg-surface-ice p-4">
           <div>
             <p className="font-mono text-label-sm text-on-surface-variant uppercase">Best score</p>
-            <p className="mt-1 font-display text-headline-lg text-on-surface">
+            <p className="mt-1 font-display text-headline-md text-on-surface">
               {quiz.best_score != null ? formatPercent(quiz.best_score) : "—"}
             </p>
           </div>

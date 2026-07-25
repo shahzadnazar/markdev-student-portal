@@ -36,18 +36,18 @@ function GreetingHeader({ name, streakDays, isLoading }: GreetingHeaderProps) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="mb-8 flex flex-wrap items-end justify-between gap-4"
+      className="mb-5 flex flex-wrap items-end justify-between gap-4"
     >
       <div className="min-w-0">
         <p className="mb-1 font-mono text-label-sm text-primary uppercase">
           {format(now, "EEEE")} · {formatDate(now)}
         </p>
-        <h1 className="font-display text-headline-lg text-on-surface md:text-headline-xl">
+        <h1 className="font-display text-headline-md text-on-surface">
           {greetingForHour(now.getHours())}
           {firstName ? `, ${firstName}` : ""}
         </h1>
-        <p className="mt-2 max-w-2xl text-body-md text-on-surface-variant">
-          Pick up where you left off and keep the momentum going.
+        <p className="mt-1 max-w-2xl text-body-sm text-on-surface-variant">
+          Your classes, deadlines and progress at a glance.
         </p>
       </div>
 

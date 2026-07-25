@@ -126,7 +126,7 @@ export default function CourseDetailPage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Catalog" title={course.title} />
+      <PageHeader crumbs={[{ label: "Courses", to: "/courses" }, { label: course.title }]} title={course.title} />
 
       <div className="space-y-6">
         {/* Hero */}

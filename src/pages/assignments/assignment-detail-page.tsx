@@ -85,7 +85,7 @@ export default function AssignmentDetailPage() {
     <div>
       <BackLink />
       <PageHeader
-        eyebrow={assignment.course.title}
+        crumbs={[{ label: "Assignments", to: "/assignments" }, { label: assignment.title }]}
         title={assignment.title}
         description={assignment.description ?? undefined}
       />
@@ -535,7 +535,7 @@ function ScorePanel({
   return (
     <div className="border-t border-outline-variant/40 pt-5">
       <h3 className="font-mono text-label-sm text-on-surface-variant uppercase">Score</h3>
-      <p className="mt-2 font-display text-headline-xl text-on-surface">
+      <p className="mt-2 font-display text-headline-md text-on-surface">
         {score}
         <span className="text-headline-md text-on-surface-variant"> / {maxScore}</span>
       </p>

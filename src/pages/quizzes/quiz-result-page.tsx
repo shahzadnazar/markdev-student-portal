@@ -64,7 +64,7 @@ export default function QuizResultPage() {
   return (
     <div>
       <BackLink quizId={quizId} />
-      <PageHeader eyebrow="Quiz result" title={result.quiz_title} />
+      <PageHeader crumbs={[{ label: "Quizzes", to: "/quizzes" }, { label: result.quiz_title }, { label: "Result" }]} title={result.quiz_title} />
 
       <motion.div {...sectionMotion(0.05)}>
         <HeroCard result={result} quizId={quizId} />
@@ -133,7 +133,7 @@ function HeroCard({ result, quizId }: { result: QuizResult; quizId: string }) {
             {result.passed ? "Passed" : "Failed"}
           </Badge>
 
-          <p className="mt-4 font-display text-headline-xl text-on-surface">
+          <p className="mt-4 font-display text-headline-md text-on-surface">
             {formatPercent(result.percent)}
           </p>
           <p className="mt-1 font-mono text-label-md text-on-surface-variant">

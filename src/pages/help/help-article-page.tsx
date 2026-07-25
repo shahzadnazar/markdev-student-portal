@@ -63,7 +63,7 @@ export default function HelpArticlePage() {
               </span>
             </div>
 
-            <h1 className="mt-4 font-display text-headline-lg text-on-surface">
+            <h1 className="mt-4 font-display text-headline-md text-on-surface">
               {articleQuery.data.title}
             </h1>
 
