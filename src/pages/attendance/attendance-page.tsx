@@ -226,6 +226,9 @@ export default function AttendancePage() {
                     {format(parseISO(day.date), "EEE, MMM d")}
                   </span>
                   <Badge variant={dailyBadge[day.status].variant}>{dailyBadge[day.status].label}</Badge>
+                  {day.arrived_at ? (
+                    <span className="shrink-0 font-mono text-[11px] text-on-surface-variant/80">arr. {day.arrived_at}</span>
+                  ) : null}
                   <span className="min-w-0 flex-1 truncate text-sm text-on-surface-variant" title={day.remarks ?? undefined}>
                     {day.remarks ?? ""}
                   </span>

@@ -32,6 +32,8 @@ export interface DailyAttendanceRecord {
   date: string;
   status: DailyAttendanceStatus;
   remarks: string | null;
+  /** Actual arrival time (HH:MM, 24h) — filled by the biometric device or front desk. */
+  arrived_at: string | null;
   source: "manual" | "biometric";
   marked_at: string | null;
   /** True when staff corrected the record after marking. */
