@@ -20,7 +20,7 @@ import { useState } from "react";
 import { useBillingOverview } from "@/hooks/use-billing";
 import { formatDate, formatPercent } from "@/lib/format";
 import { formatMoney } from "@/lib/format";
-import type { BillingOverview, Invoice } from "@/types";
+import type { BillingOverview, InstallmentInfo, Invoice } from "@/types";
 import { FeeReceiptDialog } from "./fee-receipt-dialog";
 import { InvoiceDialog } from "./invoice-dialog";
 import { InvoicesCard } from "./invoices-card";
@@ -70,6 +70,9 @@ export default function PaymentsPage() {
         <div className="space-y-6">
           <BillingHero overview={overview} />
           <BillingStatCards overview={overview} onPay={setPayingInvoice} />
+          {overview.installments ? (
+            <InstallmentPlanCard info={overview.installments} currency={overview.currency} />
+          ) : null}
           <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
             <TransactionsCard currency={overview.currency} />
             <InvoicesCard onPay={setPayingInvoice} onView={setViewingInvoice} />
@@ -159,6 +162,63 @@ function BillingHero({ overview }: { overview: BillingOverview }) {
           </div>
         </dl>
       </div>
+    </motion.section>
+  );
+}
+
+/** The plan's terms and progress, mirroring the academy's installment rules. */
+function InstallmentPlanCard({ info, currency }: { info: InstallmentInfo; currency: string }) {
+  const percent = info.months > 0 ? Math.round((info.paid_count / info.months) * 100) : 0;
+  const ordinal = (day: number) => {
+    const suffix = day % 10 === 1 && day !== 11 ? "st" : day % 10 === 2 && day !== 12 ? "nd" : day % 10 === 3 && day !== 13 ? "rd" : "th";
+    return `${day}${suffix}`;
+  };
+
+  return (
+    <motion.section
+      aria-label="Installment plan"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.08, ease: "easeOut" }}
+    >
+      <Card className="gap-0 p-6">
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h3 className="font-display text-base font-semibold text-on-surface">Installment plan</h3>
+            <p className="text-sm text-on-surface-variant">
+              {info.months} monthly installments — each opens {info.activation_days} days before its due date.
+            </p>
+          </div>
+          <span className="rounded-full bg-primary/10 px-3 py-1 font-mono text-label-sm text-primary uppercase">
+            {info.paid_count}/{info.months} paid
+          </span>
+        </div>
+
+        <Progress value={percent} className="h-2" />
+
+        <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
+          <div>
+            <dt className="font-mono text-label-sm text-on-surface-variant/70 uppercase">Due date</dt>
+            <dd className="mt-0.5 font-medium text-on-surface">{ordinal(info.due_day)} of each month</dd>
+          </div>
+          <div>
+            <dt className="font-mono text-label-sm text-on-surface-variant/70 uppercase">Grace period</dt>
+            <dd className="mt-0.5 font-medium text-on-surface">{info.grace_days} days after due</dd>
+          </div>
+          <div>
+            <dt className="font-mono text-label-sm text-on-surface-variant/70 uppercase">Late fine</dt>
+            <dd className="mt-0.5 font-medium text-on-surface">
+              {formatMoney(info.fine_per_day, currency)}/day after grace
+            </dd>
+          </div>
+          <div>
+            <dt className="font-mono text-label-sm text-on-surface-variant/70 uppercase">Fines so far</dt>
+            <dd className={`mt-0.5 font-medium ${info.defaulted_fine_total > 0 ? "text-error" : "text-on-surface"}`}>
+              {info.defaulted_fine_total > 0 ? formatMoney(info.defaulted_fine_total, currency) : "None"}
+            </dd>
+          </div>
+        </dl>
+      </Card>
     </motion.section>
   );
 }
