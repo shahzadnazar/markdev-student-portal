@@ -79,6 +79,9 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
   const selectedMethod = usingMethods
     ? methods.find((method) => String(method.id) === form.watch("channel"))
     : undefined;
+  // Cash is handed over at the counter — no account to show; the paper
+  // fee receipt's number is what identifies the payment instead.
+  const isCash = selectedMethod?.channel === "cash_deposit";
 
   // Live preview of the attached receipt.
   const previewUrl = useMemo(
@@ -110,6 +113,10 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
 
   function handleSubmit(values: FormValues) {
     setRootError(null);
+    if (isCash && !values.reference_no?.trim()) {
+      form.setError("reference_no", { message: "Enter the receipt number from your fee receipt" });
+      return;
+    }
     submitFee.mutate(
       {
         invoiceId: invoice!.id,
@@ -226,7 +233,9 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
 
             {/* Right: the submission form */}
             <div className="space-y-4">
-              <p className="font-mono text-label-sm text-primary uppercase">1 · Pay to this account</p>
+              <p className="font-mono text-label-sm text-primary uppercase">
+                1 · {isCash ? "Cash payment" : "Pay to this account"}
+              </p>
               <FormField
                 label="Payment method"
                 htmlFor="fee-channel"
@@ -257,7 +266,23 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                 </Select>
               </FormField>
 
-              {selectedMethod && (
+              {selectedMethod && isCash && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <p className="font-mono text-label-sm text-primary uppercase">Pay at the counter</p>
+                  <p className="mt-2 text-body-sm text-on-surface">
+                    Hand the cash to the academy counter — you'll get a{" "}
+                    <span className="font-semibold">fee receipt</span>. Enter its receipt number
+                    below and attach a photo of it.
+                  </p>
+                  {selectedMethod.instructions && (
+                    <p className="mt-2.5 border-t border-primary/10 pt-2.5 text-body-sm text-on-surface-variant">
+                      {selectedMethod.instructions}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {selectedMethod && !isCash && (
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                   <p className="font-mono text-label-sm text-primary uppercase">Pay into this account</p>
                   <dl className="mt-2.5 space-y-1.5">
@@ -389,12 +414,20 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
               </div>
 
               <FormField
-                label="Transaction reference (optional)"
+                label={isCash ? "Receipt number" : "Transaction reference (optional)"}
                 htmlFor="fee-reference"
                 error={form.formState.errors.reference_no?.message}
-                hint="If your slip shows a TID / reference number, add it here."
+                hint={
+                  isCash
+                    ? "The number printed on the fee receipt you got at the counter."
+                    : "If your slip shows a TID / reference number, add it here."
+                }
               >
-                <Input id="fee-reference" placeholder="e.g. JC-4598812" {...form.register("reference_no")} />
+                <Input
+                  id="fee-reference"
+                  placeholder={isCash ? "e.g. RCP-1042" : "e.g. JC-4598812"}
+                  {...form.register("reference_no")}
+                />
               </FormField>
 
               <FormField label="Notes (optional)" htmlFor="fee-notes" error={form.formState.errors.notes?.message}>
