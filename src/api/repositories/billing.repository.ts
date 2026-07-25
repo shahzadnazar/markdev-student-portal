@@ -25,7 +25,11 @@ export const billingRepository = {
   /** Uploads proof of payment; the submission awaits admin verification. */
   submitPayment(invoiceId: number | string, payload: SubmitFeePayload) {
     const form = new FormData();
-    form.append("channel", payload.channel);
+    if (payload.payment_method_id) {
+      form.append("payment_method_id", String(payload.payment_method_id));
+    } else if (payload.channel) {
+      form.append("channel", payload.channel);
+    }
     form.append("payer_name", payload.payer_name);
     form.append("reference_no", payload.reference_no);
     form.append("payment_date", payload.payment_date);

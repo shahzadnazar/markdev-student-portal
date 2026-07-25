@@ -43,6 +43,8 @@ export interface Invoice {
   id: number;
   /** Public number, e.g. "INV-2026-0042". */
   number: string;
+  /** "installment" for plan installments, "registration" for the admission fee. */
+  type?: "installment" | "registration";
   /** 1-based installment position when part of a monthly plan. */
   sequence_no: number | null;
   title: string | null;
@@ -90,6 +92,8 @@ export interface BillingOverview {
   pending_invoice: Invoice | null;
   /** Accounts a student can pay into (JazzCash, bank transfer, ...). */
   payment_channels: PaymentChannel[];
+  /** Configured accounts with full details, scoped to the plan's course. */
+  payment_methods?: PaymentMethodInfo[];
   support_phone: string | null;
   /** Present when the plan is a monthly installment schedule. */
   installments: InstallmentInfo | null;
@@ -110,8 +114,22 @@ export interface PaymentChannel {
   label: string;
 }
 
-export interface SubmitFeePayload {
+export interface PaymentMethodInfo {
+  id: number;
+  name: string;
   channel: string;
+  channel_label: string;
+  account_title: string;
+  account_number: string;
+  bank_name: string | null;
+  instructions: string | null;
+}
+
+export interface SubmitFeePayload {
+  /** Legacy free-form channel — used when no configured method is chosen. */
+  channel?: string;
+  /** Configured payment method the student paid into. */
+  payment_method_id?: number;
   payer_name: string;
   reference_no: string;
   payment_date: string;

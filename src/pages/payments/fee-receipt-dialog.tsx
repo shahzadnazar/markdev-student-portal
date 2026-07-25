@@ -70,6 +70,14 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
 
   const receipt = form.watch("receipt") as File | undefined;
 
+  // Configured accounts (JazzCash, bank …) win over the legacy free-form
+  // channel list; the select then carries the method id.
+  const methods = overview.payment_methods ?? [];
+  const usingMethods = methods.length > 0;
+  const selectedMethod = usingMethods
+    ? methods.find((method) => String(method.id) === form.watch("channel"))
+    : undefined;
+
   // Live preview of the attached receipt.
   const previewUrl = useMemo(
     () => (receipt && receipt.type.startsWith("image/") ? URL.createObjectURL(receipt) : null),
@@ -101,7 +109,9 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
       {
         invoiceId: invoice!.id,
         payload: {
-          channel: values.channel,
+          ...(usingMethods
+            ? { payment_method_id: Number(values.channel) }
+            : { channel: values.channel }),
           payer_name: values.payer_name,
           reference_no: values.reference_no,
           payment_date: values.payment_date,
@@ -200,7 +210,7 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
             {/* Right: the submission form */}
             <div className="space-y-4">
               <FormField
-                label="Choose bank account"
+                label="Payment method"
                 htmlFor="fee-channel"
                 error={form.formState.errors.channel?.message}
               >
@@ -210,18 +220,55 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                     form.setValue("channel", value, { shouldValidate: form.formState.isSubmitted })
                   }
                 >
-                  <SelectTrigger id="fee-channel" aria-label="Choose bank account">
+                  <SelectTrigger id="fee-channel" aria-label="Payment method">
                     <SelectValue placeholder="Where did you pay?" />
                   </SelectTrigger>
                   <SelectContent>
-                    {overview.payment_channels.map((channel) => (
-                      <SelectItem key={channel.value} value={channel.value}>
-                        {channel.label}
-                      </SelectItem>
-                    ))}
+                    {usingMethods
+                      ? methods.map((method) => (
+                          <SelectItem key={method.id} value={String(method.id)}>
+                            {method.name}
+                          </SelectItem>
+                        ))
+                      : overview.payment_channels.map((channel) => (
+                          <SelectItem key={channel.value} value={channel.value}>
+                            {channel.label}
+                          </SelectItem>
+                        ))}
                   </SelectContent>
                 </Select>
               </FormField>
+
+              {selectedMethod && (
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                  <p className="font-mono text-label-sm text-primary uppercase">Pay into this account</p>
+                  <dl className="mt-2.5 space-y-1.5">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <dt className="text-body-sm text-on-surface-variant">Account title</dt>
+                      <dd className="text-right text-body-sm font-semibold text-on-surface">
+                        {selectedMethod.account_title}
+                      </dd>
+                    </div>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <dt className="text-body-sm text-on-surface-variant">Account number</dt>
+                      <dd className="text-right font-mono text-body-md font-semibold text-primary">
+                        {selectedMethod.account_number}
+                      </dd>
+                    </div>
+                    {selectedMethod.bank_name && (
+                      <div className="flex items-baseline justify-between gap-3">
+                        <dt className="text-body-sm text-on-surface-variant">Bank</dt>
+                        <dd className="text-right text-body-sm text-on-surface">{selectedMethod.bank_name}</dd>
+                      </div>
+                    )}
+                  </dl>
+                  {selectedMethod.instructions && (
+                    <p className="mt-2.5 border-t border-primary/10 pt-2.5 text-body-sm text-on-surface-variant">
+                      {selectedMethod.instructions}
+                    </p>
+                  )}
+                </div>
+              )}
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField
