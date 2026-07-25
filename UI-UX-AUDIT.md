@@ -112,10 +112,129 @@ Coverage is strong: `ErrorState` in 23 page files, `Skeleton` in 29, `EmptyState
 
 ## Part B — Admin Portal (`markdev-admin-api`)
 
-*(see continuation below — compiled from the admin-side inspection)*
+Inventory: 52 admin screens, 24 shared Blade components, 138-line `app.css` token/utility layer. Confirm dialogs are mostly specific and interpolated; Cancel is never red; Edit/View are neutral — good baselines.
+
+### B1. Shell & layout
+
+| Sev | Finding | Where |
+| --- | --- | --- |
+| High | No breadcrumbs; topbar shows only a mono page title; deep pages rely on inconsistent ad-hoc Back buttons | `components/admin/layout.blade.php:46` |
+| Medium | Mobile drawer: no Escape close, no focus trap, doesn't close on navigation | `layout.blade.php:26-32` |
+| Medium | Notification/user dropdowns lack `aria-expanded` / `role="menu"` / focus return | `layout.blade.php:52-115` |
+| Medium | Uncached DB queries in the layout on every render (notifications, maintenance flag, pending-fee badge) | `layout.blade.php:4-5,51`, `sidebar.blade.php:79` |
+| Low | Sidebar fixed 280 px, no collapse; user identity duplicated sidebar + topbar | `sidebar.blade.php` |
+
+### B2. Component inventory & gaps
+
+Present: btn (5×3), badge (6), card, table (+footer slot), filter-bar, page-header, empty-state, confirm-form, modal, 47-glyph icon set, stat-widget, form/{input,select,textarea,label,error,toggle}, summary-strip, doc-field, vendor pagination.
+
+| Sev | Missing | Impact |
+| --- | --- | --- |
+| High | Toast system | flash is one hard-coded block, single message, success/error only, drops the 2nd message, no pause-on-hover (`layout.blade.php:143-172`) |
+| High | Row overflow (three-dot) menu + ellipsis icon | rows carry up to 4 visible icon actions with no menu option |
+| High | Alert/banner component | inline banners hand-rolled 3 different ways |
+| High | Icon-button component | row actions written 2 ways; the raw `rounded-lg p-2` variant has **no focus ring at all** |
+| Medium | Tabs component | 5 hand-rolled segmented controls with 2 divergent active styles |
+| Medium | Tooltip, drawer, skeleton, sticky form actions, form section, bulk-action bar, status-badge resolver, result-count partial | see B4–B8 |
+
+### B3. Screens
+
+45 pages use `x-page-header`; **7 use a newer hand-rolled compact header** (attendance daily/student, enrollments/create, billing plans index/show, payment-methods index/form) — h1 28 px vs 24 px, margin 32 px vs 20 px. Standardize on the compact pattern via a `compact` prop.
+
+| Sev | Finding | Where |
+| --- | --- | --- |
+| High | 4 index pages have **no pagination**: roles (`@foreach`, also no empty state), media grid, payment-methods, attendance register | `roles/index:20`, `media/index:34`, `payment-methods/index:19`, `attendance/index:55` |
+| High | Modals rendered **inside `<tbody>`** (invalid HTML, 1 modal per row) | `audit-logs/index:97`, `biometric/devices:114` |
+| High | Audit-log rows are click-only — no keyboard path to the detail modal | `audit-logs/index:69` |
+| Medium | Large forms inside `max-w-md` modals (enroll popup ≈ 8 fields + preview; attendance update) | `enrollments/create:163-258`, `attendance/daily:287-352` |
+| Medium | Dashboard chart SVG duplicated in 2 files with hard-coded hex | `dashboard/index:53-69`, `dashboard/instructor:49-64` |
+| Medium | Reports page: no filters, no date range | `reports/index` |
+| Low | Settings: long single form, `border-t` sections only, no sticky save | `settings/edit` |
+
+### B4. Consistency
+
+| Sev | Finding | Detail |
+| --- | --- | --- |
+| High | `text-label-md` is **undefined** — 6 headings render at inherited size | `students/form:165,182`, `students/show:132,152,177`, `instructors/show:95` |
+| Medium | 281 arbitrary Tailwind values form an unofficial type scale (`text-[11px]`×85, `text-[10px]`×45, `text-[13px]`×40) — not tokens | app-wide |
+| Medium | Status→badge maps inlined 15+ times (invoice map duplicated verbatim, transaction map ×2, attendance ×4, course ×2) | billing/attendance/courses views |
+| Medium | 8 pages hand-roll GET filter forms (h-9 fields) instead of `x-filter-bar` (≈42 px fields) — height + label drift | students, instructors, attendance, enrollments, plans, submissions |
+| Medium | Summary-chip markup re-hand-rolled twice despite `summary-strip` component existing | `plans/index:43-58`, `plans/show:59-84` |
+| Medium | Non-legitimate inline styles: `white-space: nowrap` ×11, static `max-width` ×6, avatar `width/height` ×4 (build-proof workarounds — convert once CSS build is reliable) | various |
+| Medium | Dead v3 `tailwind.config.js` contradicts `app.css` (declares Figtree; pipeline reads Inter) | repo root |
+| Low | Dead `.prose-simple` CSS block; `.check`/`.scroll-thin` hard-code token hexes; duplicate icon paths (`arrow-down` ≡ `chevron-down`) | `app.css:90-104,68,110,120` |
+
+### B5. Buttons & actions
+
+| Sev | Finding | Where |
+| --- | --- | --- |
+| Medium | No `success` btn variant — Approve renders blue vs Reject red (should be green vs red) | `btn.blade.php:12-18`, `billing/submissions` |
+| Medium | Rows with 3–4 visible icon actions and no overflow menu | courses, quizzes, users (trashed), help, biometric |
+| High | **Zero duplicate-submit protection** anywhere — double-clicking Save double-posts (incl. financial records) | all forms |
+| Low | Good: all 28 Cancel buttons are ghost; destructive = red; Edit/View neutral | — |
+
+### B6. Forms
+
+| Sev | Finding | Where |
+| --- | --- | --- |
+| High | `required` renders no asterisk anywhere (label component has no required prop) — ~15 required fields on the student form are indistinguishable | `form/label.blade.php` |
+| High | No validation error summary / scroll-to-first-error on any form (errors can sit off-screen) | e.g. `students/form` (4 cards) |
+| High | No sticky action bar on any long form | `students/form:196`, `settings/edit:59` |
+| Medium | 4 competing section-header styles across big forms (blue bars / eyebrow / border-t / none) | students, courses, settings, others flat |
+| Medium | Field-height drift: `.field` ≈42 px vs `h-9` overrides ×9 vs `h-[42px]` label hacks ×2 | filter bars |
+| Low | Two file-upload experiences (rich doc-field vs raw input) | `courses/form:68` |
+
+### B7. Tables
+
+| Sev | Finding | Where |
+| --- | --- | --- |
+| High | Numeric/currency columns left-aligned — 51 `font-mono` numeric cells never set `text-right` | plans, quizzes, courses, roles… |
+| Medium | 7 headers right-aligned over left-aligned cells | categories, roles, courses, quizzes |
+| Medium | Result count only renders when `hasPages()`; 6 pages hand-roll a duplicate "Showing X–Y of Z"; 18 paginated pages show no count on single-page results | vendor partial |
+| Medium | No sticky headers; no bulk selection anywhere | app-wide |
+| Low | Good: `.th/.td/.row` centralized, uniform ~48 px rows, hover-only striping | `app.css:72-82` |
+
+### B8. Feedback & accessibility
+
+| Sev | Finding | Where |
+| --- | --- | --- |
+| **Critical** | ~40 raw icon buttons/links have **no focus style** (only `.field` has any focus rule) and 9+ have **no accessible name**; every `confirm-form` trigger across 21 files is unlabelled by default | `app.css`, `confirm-form.blade.php:15`, categories/quizzes/users/courses/roles/announcements/help/invoices/instructors |
+| Medium | Touch targets: btn-sm ≈26 px, raw icon buttons 32 px, media grid 22 px | `btn.blade.php:7` |
+| Medium | Color-only encodings: progress bars without labels/`role="progressbar"`, attendance pills, summary dots | enrollments, plans, attendance |
+| Medium | Hand-rolled filter fields with no `<label>`/`id` (the sr-only pattern exists but isn't applied everywhere) | `students/index:42,48`, others |
+| Medium | Flash auto-dismisses at 5 s, no pause-on-hover; `session('warning')`/`status` never rendered in admin | `layout.blade.php:143-172` |
+| Low | Good: specific confirm messages; PIN error surfacing; branded role-aware 403 | — |
 
 ---
 
 ## Classification summary & remediation plan
 
-*(see end of document)*
+**Counts:** Critical 3 · High 21 · Medium 38 · Low 22.
+
+### Critical (fix first)
+1. Portal: focus ring clipped by `overflow-hidden` (keyboard focus invisible) — `index.css:154`.
+2. Portal: invoice status naming mismatch list vs detail — `invoices-card.tsx:23` / `invoice-dialog.tsx:15`.
+3. Admin: no focus style + no accessible name on ~40 row actions — `app.css` + 10 views.
+
+### Shared components to CREATE
+Portal: `Table`, `ConfirmDialog`, `Breadcrumbs`, `Drawer` (nav), Toast wrapper, `warning` Button variant, `StatusBadge` registry, `StickyFormActions`.
+Admin: toast service, row overflow menu (+ellipsis icon), alert banner, icon-button, tabs, form-section, sticky form actions, error summary, status-badge resolver, result-count partial, tooltip, breadcrumbs.
+
+### Components to REFACTOR
+Portal: app-shell mobile drawer → Radix Dialog; EmptyState/ErrorState/PageLoader density; PaginationBar single-page count; chart colors → CSS vars; TooltipProvider → root.
+Admin: `btn` (+success variant, submit-once), `form/label` (+required), `confirm-form` (labels/focus/modal base), `page-header` (+compact), vendor pagination (always show count), `x-filter-bar` variants, modal consolidation (3 systems → 1).
+
+### Screens needing MAJOR restructuring
+Admin: `roles/index` (pagination+empty state), `media/index` (pagination), `attendance/index` (pagination/sticky header), `audit-logs/index` (single keyboard-accessible modal), `biometric/devices` (modal out of tbody), `reports/index` (filters). Portal: none — visual cleanup only.
+
+### Screens needing only VISUAL cleanup
+Portal: dashboard (heading), payments (hero decoration), auth layout (splash), leaderboard (mobile), attendance (semantic table), profile (states). Admin: the 7 compact-header pages (standardize via component), forms (sections/asterisks), tables (numeric alignment).
+
+### Implementation order (per brief)
+1. **Foundations** — focus rings, tokens (`text-label-md`, radius/motion), button variants + submit-once, required asterisks, status registries, alert/toast primitives.
+2. **Global layout** — breadcrumbs, drawer a11y, header standardization, dropdown a11y.
+3. **Critical admin screens** — pagination gaps, tbody modals, numeric alignment, form sections, error summaries.
+4. **Critical student screens** — dashboard/payments/auth de-marketing, profile states, leaderboard mobile.
+5. **UI states** — result counts, sticky headers, skeletons (admin), empty states.
+6. **Responsive & a11y QA** — keyboard pass, touch targets, long-content tests.
+
