@@ -44,7 +44,7 @@ export function InvoicesCard({ onPay, onView }: InvoicesCardProps) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: 0.25, ease: "easeOut" }}
     >
-      <Card className="p-6">
+      <Card className="p-5">
         <h2 className="font-display text-headline-md text-on-surface">Installments</h2>
         <p className="mt-1 mb-5 text-body-sm text-on-surface-variant">
           Only the current installment is payable — future months open 5 days before their due date.

@@ -80,7 +80,7 @@ export default function PaymentsPage() {
           }}
         />
       ) : overview && (overview.billing_active || overview.total_amount > 0) ? (
-        <div className="space-y-6">
+        <div className="space-y-4">
           <BillingHero overview={overview} />
           {overview.admission ? (
             <AdmissionCard
@@ -93,7 +93,7 @@ export default function PaymentsPage() {
           {overview.installments ? (
             <InstallmentPlanCard info={overview.installments} currency={overview.currency} />
           ) : null}
-          <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
+          <div className="grid gap-4 xl:grid-cols-[1fr_24rem]">
             <TransactionsCard currency={overview.currency} />
             <InvoicesCard onPay={(invoice) => setPaying([invoice])} onView={setViewingInvoice} />
           </div>
@@ -123,7 +123,7 @@ function BillingHero({ overview }: { overview: BillingOverview }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="relative overflow-hidden rounded-3xl bg-primary px-6 py-8 text-white shadow-elevated md:px-8 md:py-10"
+      className="relative overflow-hidden rounded-2xl bg-primary px-5 py-4 text-white shadow-elevated md:px-6 md:py-5"
     >
       {/* Decorative sheen and oversized watermark */}
       <div
@@ -132,20 +132,20 @@ function BillingHero({ overview }: { overview: BillingOverview }) {
       />
       <GraduationCap
         aria-hidden="true"
-        className="pointer-events-none absolute -right-6 -bottom-8 size-48 text-white opacity-[0.06]"
+        className="pointer-events-none absolute -right-4 -bottom-6 size-28 text-white opacity-[0.06]"
       />
 
-      <div className="relative flex flex-wrap items-center justify-between gap-8">
-        <div className="flex items-center gap-5">
-          <div className="flex size-16 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10">
-            <GraduationCap className="size-7" aria-hidden="true" />
+      <div className="relative flex flex-wrap items-center justify-between gap-5">
+        <div className="flex items-center gap-3.5">
+          <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10">
+            <GraduationCap className="size-5" aria-hidden="true" />
           </div>
           <div>
-            <h2 className="font-display text-headline-md text-white md:text-headline-lg">
+            <h2 className="font-display text-body-lg font-bold text-white md:text-headline-md">
               {overview.plan_title ?? "Tuition & fees"}
             </h2>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <span className="rounded-full bg-white/20 px-3 py-1 font-mono text-label-sm uppercase">
+            <div className="mt-1.5 flex flex-wrap items-center gap-2.5">
+              <span className="rounded-full bg-white/20 px-2.5 py-0.5 font-mono text-label-sm uppercase">
                 Account overview
               </span>
               {overview.billing_active && (
@@ -155,7 +155,7 @@ function BillingHero({ overview }: { overview: BillingOverview }) {
                 </span>
               )}
               {overview.installments && (
-                <span className="rounded-full bg-white/20 px-3 py-1 font-mono text-label-sm uppercase">
+                <span className="rounded-full bg-white/20 px-2.5 py-0.5 font-mono text-label-sm uppercase">
                   {overview.installments.paid_count}/{overview.installments.months} installments paid
                   · due day {overview.installments.due_day}
                 </span>
@@ -164,16 +164,16 @@ function BillingHero({ overview }: { overview: BillingOverview }) {
           </div>
         </div>
 
-        <dl className="flex gap-10 text-left md:gap-12">
+        <dl className="flex gap-8 text-left">
           <div>
             <dt className="font-mono text-label-sm text-white/70 uppercase">Total tuition</dt>
-            <dd className="mt-1 font-display text-headline-md md:text-headline-lg">
+            <dd className="mt-0.5 font-display text-headline-md">
               {formatMoney(overview.total_amount, overview.currency)}
             </dd>
           </div>
           <div>
             <dt className="font-mono text-label-sm text-white/70 uppercase">Paid to date</dt>
-            <dd className="mt-1 font-display text-headline-md md:text-headline-lg">
+            <dd className="mt-0.5 font-display text-headline-md">
               {formatMoney(overview.paid_amount, overview.currency)}{" "}
               <span className="text-body-md text-white/60">
                 ({formatPercent(overview.paid_percent)})
@@ -201,8 +201,8 @@ function InstallmentPlanCard({ info, currency }: { info: InstallmentInfo; curren
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: 0.08, ease: "easeOut" }}
     >
-      <Card className="gap-0 p-6">
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <Card className="gap-0 p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="font-display text-base font-semibold text-on-surface">Installment plan</h3>
             <p className="text-sm text-on-surface-variant">
@@ -216,7 +216,7 @@ function InstallmentPlanCard({ info, currency }: { info: InstallmentInfo; curren
 
         <Progress value={percent} className="h-2" />
 
-        <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-3 text-sm sm:grid-cols-4">
+        <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2.5 text-sm sm:grid-cols-4">
           <div>
             <dt className="font-mono text-label-sm text-on-surface-variant/70 uppercase">Due date</dt>
             <dd className="mt-0.5 font-medium text-on-surface">{ordinal(info.due_day)} of each month</dd>
@@ -264,24 +264,24 @@ function AdmissionCard({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: 0.03, ease: "easeOut" }}
-      className="rounded-3xl border border-secondary/25 bg-secondary/5 p-6"
+      className="rounded-2xl border border-secondary/25 bg-secondary/5 p-4"
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="font-mono text-label-sm text-secondary uppercase">Admission · one-time charges</p>
-          <h2 className="mt-1 font-display text-headline-md text-on-surface">Confirm your admission</h2>
-          <p className="mt-1 text-body-sm text-on-surface-variant">
+          <h2 className="mt-0.5 font-display text-body-lg font-bold text-on-surface">Confirm your admission</h2>
+          <p className="mt-0.5 text-body-sm text-on-surface-variant">
             Collected once on admission day — installments continue monthly.
           </p>
         </div>
         {admission.total_due > 0 && (
-          <div className="rounded-2xl bg-white px-5 py-3 text-right shadow-card">
+          <div className="rounded-xl bg-white px-4 py-2 text-right shadow-card">
             <p className="font-mono text-label-sm text-on-surface-variant uppercase">Pay today</p>
-            <p className="font-display text-headline-md text-secondary">
+            <p className="font-display text-body-lg font-bold text-secondary">
               {formatMoney(admission.total_due, currency)}
             </p>
             {payable.length > 1 && (
-              <Button variant="success" size="sm" className="mt-2 w-full" onClick={() => onPay(payable)}>
+              <Button variant="success" size="sm" className="mt-1.5 w-full" onClick={() => onPay(payable)}>
                 Pay both together
               </Button>
             )}
@@ -289,17 +289,17 @@ function AdmissionCard({
         )}
       </div>
 
-      <div className="mt-5 grid gap-3 md:grid-cols-2">
+      <div className="mt-3.5 grid gap-2.5 md:grid-cols-2">
         {admission.invoices.map((invoice) => {
           const isRegistration = invoice.type === "registration";
           const underReview = invoice.status === "pending";
           return (
             <div
               key={invoice.id}
-              className="flex items-center justify-between gap-4 rounded-2xl bg-white p-4 shadow-card"
+              className="flex items-center justify-between gap-4 rounded-xl bg-white p-3 shadow-card"
             >
               <div className="min-w-0">
-                <p className="text-body-md font-semibold text-on-surface">
+                <p className="text-body-sm font-semibold text-on-surface">
                   {isRegistration ? "Registration fee" : "1st installment — advance"}
                 </p>
                 <p className="mt-0.5 text-body-sm text-on-surface-variant">
@@ -308,7 +308,7 @@ function AdmissionCard({
                 <p className="mt-1 font-mono text-label-sm text-on-surface-variant">{invoice.number}</p>
               </div>
               <div className="shrink-0 text-right">
-                <p className="font-display text-body-lg font-semibold text-on-surface">
+                <p className="font-display text-body-md font-semibold text-on-surface">
                   {formatMoney(invoice.payable_total, invoice.currency)}
                 </p>
                 {underReview ? (
@@ -348,22 +348,22 @@ function BillingStatCards({
     : null;
 
   return (
-    <div className="grid gap-6 md:grid-cols-3">
+    <div className="grid gap-4 md:grid-cols-3">
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
       >
-        <Card className="h-full p-6">
+        <Card className="h-full p-4">
           <div className="flex items-start justify-between">
-            <div className="flex size-11 items-center justify-center rounded-xl bg-surface-container text-on-surface-variant">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-surface-container text-on-surface-variant">
               <Wallet className="size-5" aria-hidden="true" />
             </div>
             <span className="font-mono text-label-sm text-on-surface-variant uppercase">
               Total tuition
             </span>
           </div>
-          <p className="mt-4 font-display text-headline-lg text-on-surface">
+          <p className="mt-3 font-display text-headline-md text-on-surface">
             {formatMoney(overview.total_amount, overview.currency)}
           </p>
           {cycleLabel && <p className="mt-1 text-body-sm text-on-surface-variant">{cycleLabel}</p>}
@@ -375,14 +375,14 @@ function BillingStatCards({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.1, ease: "easeOut" }}
       >
-        <Card className="h-full p-6">
+        <Card className="h-full p-4">
           <div className="flex items-start justify-between">
-            <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <CircleCheck className="size-5" aria-hidden="true" />
             </div>
             <span className="font-mono text-label-sm text-primary uppercase">Paid to date</span>
           </div>
-          <p className="mt-4 font-display text-headline-lg text-primary">
+          <p className="mt-3 font-display text-headline-md text-primary">
             {formatMoney(overview.paid_amount, overview.currency)}
           </p>
           <Progress
@@ -401,13 +401,13 @@ function BillingStatCards({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.15, ease: "easeOut" }}
       >
-        <Card className="h-full p-6">
+        <Card className="h-full p-4">
           <div className="flex items-start justify-between">
             <div
               className={
                 settled
-                  ? "flex size-11 items-center justify-center rounded-xl bg-success-container text-success"
-                  : "flex size-11 items-center justify-center rounded-xl bg-error-container text-error"
+                  ? "flex size-9 items-center justify-center rounded-lg bg-success-container text-success"
+                  : "flex size-9 items-center justify-center rounded-lg bg-error-container text-error"
               }
             >
               <CalendarClock className="size-5" aria-hidden="true" />
@@ -422,7 +422,7 @@ function BillingStatCards({
               Remaining
             </span>
           </div>
-          <p className="mt-4 font-display text-headline-lg text-on-surface">
+          <p className="mt-3 font-display text-headline-md text-on-surface">
             {formatMoney(overview.remaining_amount, overview.currency)}
           </p>
           {settled ? (
@@ -458,7 +458,7 @@ function BillingStatCards({
               )}
               <Button
                 variant="success"
-                className="mt-4 w-full"
+                className="mt-3 w-full"
                 disabled={!overview.next_invoice}
                 onClick={() => {
                   if (overview.next_invoice) onPay(overview.next_invoice);

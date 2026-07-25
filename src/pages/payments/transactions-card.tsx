@@ -65,7 +65,7 @@ export function TransactionsCard({ currency }: { currency: string }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, delay: 0.2, ease: "easeOut" }}
     >
-      <Card className="p-6">
+      <Card className="p-5">
         <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="font-display text-headline-md text-on-surface">Payment history</h2>
