@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CircleHelp, FileText, Phone, UploadCloud, X } from "lucide-react";
+import { Check, Copy, FileText, Phone, UploadCloud, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, type FieldPath } from "react-hook-form";
 import { z } from "zod";
@@ -31,7 +31,19 @@ import type { BillingOverview, Invoice } from "@/types";
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
 
+/** Unfinished pay-dialog state survives leaving the browser (e.g. switching
+ *  to a banking app) — the payments page reopens it from this key. */
+export const FEE_DRAFT_KEY = "markdev.fee-draft";
+
 const today = () => new Date().toISOString().slice(0, 10);
+
+const emptyValues = () => ({
+  channel: "",
+  payer_name: "",
+  reference_no: "",
+  payment_date: today(),
+  notes: "",
+});
 
 const schema = z.object({
   channel: z.string().min(1, "Choose where you paid"),
@@ -53,13 +65,44 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 interface FeeReceiptDialogProps {
-  invoice: Invoice | null;
+  /** One invoice, or several paid together with a single receipt. */
+  invoices: Invoice[] | null;
   overview: BillingOverview;
   onClose: () => void;
 }
 
+function invoiceLabel(invoice: Invoice): string {
+  if (invoice.type === "registration") return "Registration fee";
+  const title = invoice.title ?? "";
+  return title.includes("—") ? title.split("—").slice(1).join("—").trim() : title || invoice.number;
+}
+
+function CopyValue({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        void navigator.clipboard?.writeText(value).then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1500);
+        });
+      }}
+      className="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md text-primary transition hover:bg-primary/10"
+      aria-label="Copy account number"
+      title="Copy"
+    >
+      {copied ? (
+        <Check className="size-4 text-success" aria-hidden="true" />
+      ) : (
+        <Copy className="size-4" aria-hidden="true" />
+      )}
+    </button>
+  );
+}
+
 /** The "Fee Receipt" submission modal — proof of payment goes in, status starts pending. */
-export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialogProps) {
+export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDialogProps) {
   const submitFee = useSubmitFeePayment();
   const [rootError, setRootError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,10 +110,11 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { channel: "", payer_name: "", reference_no: "", payment_date: today(), notes: "" },
+    defaultValues: emptyValues(),
   });
 
   const receipt = form.watch("receipt") as File | undefined;
+  const idsKey = invoices?.map((entry) => entry.id).join(",") ?? "";
 
   // Configured accounts (JazzCash, bank …) win over the legacy free-form
   // channel list; the select then carries the method id.
@@ -79,8 +123,8 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
   const selectedMethod = usingMethods
     ? methods.find((method) => String(method.id) === form.watch("channel"))
     : undefined;
-  // Cash is handed over at the counter — no account to show; the paper
-  // fee receipt's number is what identifies the payment instead.
+  // Cash is handed over at the counter — the paper fee receipt's number
+  // identifies the payment instead of an account.
   const isCash = selectedMethod?.channel === "cash_deposit";
 
   // Live preview of the attached receipt.
@@ -92,19 +136,75 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
     if (previewUrl) URL.revokeObjectURL(previewUrl);
   }, [previewUrl]);
 
-  // Reset the form whenever a different invoice opens the dialog.
+  // On open: restore the saved draft for these invoices, otherwise start clean.
   useEffect(() => {
-    if (invoice) {
-      form.reset({ channel: "", payer_name: "", reference_no: "", payment_date: today(), notes: "" });
-      setRootError(null);
+    if (!invoices?.length) return;
+    let restored = false;
+    try {
+      const raw = localStorage.getItem(FEE_DRAFT_KEY);
+      if (raw) {
+        const draft = JSON.parse(raw) as { ids?: number[]; values?: Partial<FormValues> };
+        if (draft.ids?.join(",") === idsKey && draft.values) {
+          form.reset({ ...emptyValues(), ...draft.values });
+          restored = true;
+        }
+      }
+    } catch {
+      /* corrupt draft — ignore */
     }
+    if (!restored) form.reset(emptyValues());
+    setRootError(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [invoice?.id]);
+  }, [idsKey]);
 
-  if (!invoice) return null;
+  // Keep the draft in sync while the student types (file uploads can't persist).
+  useEffect(() => {
+    if (!invoices?.length) return;
+    const subscription = form.watch((values) => {
+      try {
+        localStorage.setItem(
+          FEE_DRAFT_KEY,
+          JSON.stringify({
+            ids: invoices.map((entry) => entry.id),
+            invoices,
+            values: {
+              channel: values.channel,
+              payer_name: values.payer_name,
+              reference_no: values.reference_no,
+              payment_date: values.payment_date,
+              notes: values.notes,
+            },
+          }),
+        );
+      } catch {
+        /* storage unavailable — drafts are best-effort */
+      }
+    });
+    return () => subscription.unsubscribe();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idsKey]);
 
-  const isRegistration = invoice.type === "registration";
-  const isAdvance = (invoice.title ?? "").toLowerCase().includes("advance");
+  if (!invoices?.length) return null;
+
+  const combined = invoices.length > 1;
+  const first = invoices[0];
+  const totalPayable = invoices.reduce((sum, entry) => sum + entry.payable_total, 0);
+  const totalFines = invoices.reduce((sum, entry) => sum + entry.fine_amount, 0);
+  const isRegistration = !combined && first.type === "registration";
+  const isAdvance = !combined && (first.title ?? "").toLowerCase().includes("advance");
+
+  function clearDraft() {
+    try {
+      localStorage.removeItem(FEE_DRAFT_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function close() {
+    clearDraft();
+    onClose();
+  }
 
   function attachFile(file: File | undefined) {
     if (!file) return;
@@ -117,38 +217,43 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
       form.setError("reference_no", { message: "Enter the receipt number from your fee receipt" });
       return;
     }
-    submitFee.mutate(
-      {
-        invoiceId: invoice!.id,
-        payload: {
-          ...(usingMethods
-            ? { payment_method_id: Number(values.channel) }
-            : { channel: values.channel }),
-          payer_name: values.payer_name || undefined,
-          reference_no: values.reference_no || undefined,
-          payment_date: values.payment_date,
-          notes: values.notes || undefined,
-          receipt: values.receipt,
-        },
-      },
-      {
-        onSuccess: onClose,
-        onError: (error) => {
-          if (error instanceof ApiError) {
-            setRootError(error.message);
-            for (const [field, messages] of Object.entries(error.errors)) {
-              form.setError(field as FieldPath<FormValues>, { message: messages[0] });
-            }
-          } else {
-            setRootError("Couldn't submit your receipt. Please try again.");
+
+    const payload = {
+      ...(usingMethods
+        ? { payment_method_id: Number(values.channel) }
+        : { channel: values.channel }),
+      payer_name: values.payer_name || undefined,
+      reference_no: values.reference_no || undefined,
+      payment_date: values.payment_date,
+      notes: values.notes || undefined,
+      receipt: values.receipt,
+    };
+
+    // One receipt can settle several invoices (e.g. registration + 1st
+    // installment paid together) — submit it against each in turn.
+    (async () => {
+      for (const entry of invoices!) {
+        await submitFee.mutateAsync({ invoiceId: entry.id, payload });
+      }
+    })()
+      .then(() => {
+        clearDraft();
+        onClose();
+      })
+      .catch((error) => {
+        if (error instanceof ApiError) {
+          setRootError(error.message);
+          for (const [field, messages] of Object.entries(error.errors)) {
+            form.setError(field as FieldPath<FormValues>, { message: messages[0] });
           }
-        },
-      },
-    );
+        } else {
+          setRootError("Couldn't submit your receipt. Please try again.");
+        }
+      });
   }
 
   return (
-    <Dialog open onOpenChange={(open) => !open && onClose()}>
+    <Dialog open onOpenChange={(open) => !open && close()}>
       <DialogContent className="max-h-[92vh] overflow-y-auto sm:max-w-3xl">
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -156,8 +261,8 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
               <FileText className="size-5 text-primary" aria-hidden="true" />
             </span>
             <div>
-              <DialogTitle>Fee receipt</DialogTitle>
-              <DialogDescription>{overview.plan_title ?? invoice.title}</DialogDescription>
+              <DialogTitle>{combined ? "Pay admission — both together" : "Fee receipt"}</DialogTitle>
+              <DialogDescription>{overview.plan_title ?? first.title}</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -166,69 +271,81 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
           <FormError message={rootError} />
 
           <div className="mt-2 grid gap-6 md:grid-cols-2">
-            {/* Left: receipt details + assistance */}
-            <div className="space-y-5">
+            {/* Left: what is being paid */}
+            <div className="space-y-4">
               <div className="rounded-2xl border border-primary/15 bg-surface-ice/60 p-5">
                 <p className="border-b border-outline-variant/40 pb-3 font-mono text-label-sm text-primary uppercase">
-                  Receipt details
+                  {combined ? "Paying together" : "Receipt details"}
                 </p>
+
                 {(isRegistration || isAdvance) && (
                   <p
                     className={cn(
-                      "mt-4 rounded-lg px-3 py-2 text-body-sm",
+                      "mt-4 rounded-lg px-3 py-2 text-body-sm font-medium",
                       isRegistration ? "bg-secondary/10 text-secondary" : "bg-primary/10 text-primary",
                     )}
                   >
-                    {isRegistration
-                      ? "One-time registration fee — paying this confirms your admission."
-                      : "First monthly installment, paid in advance on your admission day."}
+                    {isRegistration ? "Confirms your admission." : "1st installment — advance."}
                   </p>
                 )}
-                <dl className="mt-4 space-y-4">
-                  <div>
-                    <dt className="font-mono text-label-sm text-on-surface-variant">Invoice</dt>
-                    <dd className="mt-0.5 text-body-md font-semibold text-on-surface">
-                      {invoice.title ?? invoice.number}
-                    </dd>
-                  </div>
-                  <div className="flex items-end justify-between gap-4">
-                    <div>
-                      <dt className="font-mono text-label-sm text-on-surface-variant">Number</dt>
-                      <dd className="mt-0.5 font-mono text-body-sm text-on-surface">{invoice.number}</dd>
+
+                {combined ? (
+                  <div className="mt-4 space-y-3">
+                    {invoices.map((entry) => (
+                      <div key={entry.id} className="flex items-center justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-body-sm font-medium text-on-surface">{invoiceLabel(entry)}</p>
+                          <p className="font-mono text-label-sm text-on-surface-variant">{entry.number}</p>
+                        </div>
+                        <p className="font-mono text-body-sm font-semibold text-on-surface">
+                          {formatMoney(entry.payable_total, entry.currency)}
+                        </p>
+                      </div>
+                    ))}
+                    <div className="flex items-center justify-between border-t border-outline-variant/40 pt-3">
+                      <p className="text-body-md font-semibold text-on-surface">Total payable</p>
+                      <p className="font-display text-headline-md text-primary">
+                        {formatMoney(totalPayable, first.currency)}
+                      </p>
                     </div>
-                    <div className="text-right">
-                      <dt className="font-mono text-label-sm text-on-surface-variant">Total payable</dt>
-                      <dd className="mt-0.5 font-display text-headline-md text-primary">
-                        {formatMoney(invoice.payable_total, invoice.currency)}
+                  </div>
+                ) : (
+                  <dl className="mt-4 space-y-4">
+                    <div>
+                      <dt className="font-mono text-label-sm text-on-surface-variant">Invoice</dt>
+                      <dd className="mt-0.5 text-body-md font-semibold text-on-surface">
+                        {invoiceLabel(first)}
                       </dd>
                     </div>
-                  </div>
-                  {invoice.fine_amount > 0 && (
-                    <p className="rounded-lg bg-error-container/50 px-3 py-2 text-body-sm text-on-error-container">
-                      Includes a defaulter fine of{" "}
-                      <span className="font-semibold">{formatMoney(invoice.fine_amount, invoice.currency)}</span>{" "}
-                      ({invoice.fine_days} {invoice.fine_days === 1 ? "day" : "days"} overdue) on top of the{" "}
-                      {formatMoney(invoice.amount, invoice.currency)} installment.
-                    </p>
-                  )}
-                </dl>
-              </div>
+                    <div className="flex items-end justify-between gap-4">
+                      <div>
+                        <dt className="font-mono text-label-sm text-on-surface-variant">Number</dt>
+                        <dd className="mt-0.5 font-mono text-body-sm text-on-surface">{first.number}</dd>
+                      </div>
+                      <div className="text-right">
+                        <dt className="font-mono text-label-sm text-on-surface-variant">Total payable</dt>
+                        <dd className="mt-0.5 font-display text-headline-md text-primary">
+                          {formatMoney(first.payable_total, first.currency)}
+                        </dd>
+                      </div>
+                    </div>
+                  </dl>
+                )}
 
-              <div className="rounded-2xl bg-surface-container-low/70 p-5">
-                <p className="flex items-center gap-2 font-mono text-label-md text-primary">
-                  <CircleHelp className="size-4" aria-hidden="true" />
-                  Need assistance?
-                </p>
-                <p className="mt-2 text-body-sm text-on-surface-variant">
-                  If you face any issue during the payment process, reach out to our support team.
-                </p>
-                {overview.support_phone && (
-                  <p className="mt-3 flex items-center gap-2 font-mono text-body-md font-semibold text-primary">
-                    <Phone className="size-4" aria-hidden="true" />
-                    {overview.support_phone}
+                {totalFines > 0 && (
+                  <p className="mt-4 rounded-lg bg-error-container/50 px-3 py-2 text-body-sm text-on-error-container">
+                    Includes {formatMoney(totalFines, first.currency)} late fine.
                   </p>
                 )}
               </div>
+
+              {overview.support_phone && (
+                <p className="flex items-center gap-2 px-1 text-body-sm text-on-surface-variant">
+                  <Phone className="size-4 shrink-0 text-primary" aria-hidden="true" />
+                  Need help?
+                  <span className="font-mono font-semibold text-primary">{overview.support_phone}</span>
+                </p>
+              )}
             </div>
 
             {/* Right: the submission form */}
@@ -270,14 +387,10 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                   <p className="font-mono text-label-sm text-primary uppercase">Pay at the counter</p>
                   <p className="mt-2 text-body-sm text-on-surface">
-                    Hand the cash to the academy counter — you'll get a{" "}
-                    <span className="font-semibold">fee receipt</span>. Enter its receipt number
-                    below and attach a photo of it.
+                    Pay cash at the counter → get a fee receipt → enter its number below + attach a photo.
                   </p>
                   {selectedMethod.instructions && (
-                    <p className="mt-2.5 border-t border-primary/10 pt-2.5 text-body-sm text-on-surface-variant">
-                      {selectedMethod.instructions}
-                    </p>
+                    <p className="mt-2 text-body-sm text-on-surface-variant">{selectedMethod.instructions}</p>
                   )}
                 </div>
               )}
@@ -292,10 +405,11 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                         {selectedMethod.account_title}
                       </dd>
                     </div>
-                    <div className="flex items-baseline justify-between gap-3">
+                    <div className="flex items-center justify-between gap-3">
                       <dt className="text-body-sm text-on-surface-variant">Account number</dt>
-                      <dd className="text-right font-mono text-body-md font-semibold text-primary">
+                      <dd className="flex items-center gap-1 text-right font-mono text-body-md font-semibold text-primary">
                         {selectedMethod.account_number}
+                        {selectedMethod.account_number && <CopyValue value={selectedMethod.account_number} />}
                       </dd>
                     </div>
                     {selectedMethod.bank_name && (
@@ -316,7 +430,6 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
               <p className="pt-1 font-mono text-label-sm text-primary uppercase">2 · Submit your receipt</p>
               {/* Receipt dropzone with preview */}
               <div className="space-y-1.5">
-                <p className="text-body-sm font-medium text-on-surface">Attach receipt</p>
                 {receipt ? (
                   <div className="relative overflow-hidden rounded-xl border border-outline-variant/60">
                     {previewUrl ? (
@@ -359,7 +472,7 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                       attachFile(event.dataTransfer.files?.[0]);
                     }}
                     className={cn(
-                      "flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-10 text-center transition-colors",
+                      "flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors",
                       dragging
                         ? "border-primary bg-primary/5"
                         : "border-outline-variant bg-surface-ice/50 hover:border-primary/50",
@@ -369,11 +482,9 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                       <UploadCloud className="size-5 text-primary" aria-hidden="true" />
                     </span>
                     <span className="font-mono text-body-sm font-medium text-on-surface">
-                      Drop file here or click to upload
+                      Attach receipt — drop or click
                     </span>
-                    <span className="text-body-sm text-on-surface-variant">
-                      Supported formats: PNG, JPG, PDF (max 5MB)
-                    </span>
+                    <span className="text-label-sm text-on-surface-variant">PNG · JPG · PDF · max 5MB</span>
                   </button>
                 )}
                 <input
@@ -417,15 +528,11 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                 label={isCash ? "Receipt number" : "Transaction reference (optional)"}
                 htmlFor="fee-reference"
                 error={form.formState.errors.reference_no?.message}
-                hint={
-                  isCash
-                    ? "The number printed on the fee receipt you got at the counter."
-                    : "If your slip shows a TID / reference number, add it here."
-                }
+                hint={isCash ? "Printed on your fee receipt." : undefined}
               >
                 <Input
                   id="fee-reference"
-                  placeholder={isCash ? "e.g. RCP-1042" : "e.g. JC-4598812"}
+                  placeholder={isCash ? "e.g. RCP-1042" : "TID / reference, e.g. JC-4598812"}
                   {...form.register("reference_no")}
                 />
               </FormField>
@@ -437,16 +544,12 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
           </div>
 
           <div className="mt-6 flex items-center justify-end gap-3 border-t border-outline-variant/40 pt-5">
-            <Button type="button" variant="ghost" onClick={onClose}>
+            <Button type="button" variant="ghost" onClick={close}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              disabled={submitFee.isPending}
-              className="bg-success hover:bg-success/90"
-            >
-              {submitFee.isPending && <Spinner className="size-4 text-on-primary" />}
-              Submit fee receipt
+            <Button type="submit" variant="success" disabled={submitFee.isPending}>
+              {submitFee.isPending && <Spinner className="size-4 text-white" />}
+              Submit — {formatMoney(totalPayable, first.currency)}
             </Button>
           </div>
         </form>

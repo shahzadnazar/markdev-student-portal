@@ -16,12 +16,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useBillingOverview } from "@/hooks/use-billing";
 import { formatDate, formatPercent } from "@/lib/format";
 import { formatMoney } from "@/lib/format";
 import type { BillingOverview, InstallmentInfo, Invoice } from "@/types";
-import { FeeReceiptDialog } from "./fee-receipt-dialog";
+import { FEE_DRAFT_KEY, FeeReceiptDialog } from "./fee-receipt-dialog";
 import { InvoiceDialog } from "./invoice-dialog";
 import { InvoicesCard } from "./invoices-card";
 import { TransactionsCard } from "./transactions-card";
@@ -35,7 +35,20 @@ const cycleLabels: Record<string, string> = {
 export default function PaymentsPage() {
   const overviewQuery = useBillingOverview();
   const overview = overviewQuery.data;
-  const [payingInvoice, setPayingInvoice] = useState<Invoice | null>(null);
+  const [paying, setPaying] = useState<Invoice[] | null>(null);
+
+  // A pay attempt left mid-way (e.g. the student switched to a banking app)
+  // is restored from its saved draft when they come back.
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(FEE_DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw) as { invoices?: Invoice[] };
+      if (draft.invoices?.length) setPaying(draft.invoices);
+    } catch {
+      /* corrupt draft — ignore */
+    }
+  }, []);
   const [viewingInvoice, setViewingInvoice] = useState<Invoice | null>(null);
 
   return (
@@ -73,21 +86,21 @@ export default function PaymentsPage() {
             <AdmissionCard
               admission={overview.admission}
               currency={overview.currency}
-              onPay={setPayingInvoice}
+              onPay={(invoices) => setPaying(invoices)}
             />
           ) : null}
-          <BillingStatCards overview={overview} onPay={setPayingInvoice} />
+          <BillingStatCards overview={overview} onPay={(invoice) => setPaying([invoice])} />
           {overview.installments ? (
             <InstallmentPlanCard info={overview.installments} currency={overview.currency} />
           ) : null}
           <div className="grid gap-6 xl:grid-cols-[1fr_24rem]">
             <TransactionsCard currency={overview.currency} />
-            <InvoicesCard onPay={setPayingInvoice} onView={setViewingInvoice} />
+            <InvoicesCard onPay={(invoice) => setPaying([invoice])} onView={setViewingInvoice} />
           </div>
           <FeeReceiptDialog
-            invoice={payingInvoice}
+            invoices={paying}
             overview={overview}
-            onClose={() => setPayingInvoice(null)}
+            onClose={() => setPaying(null)}
           />
           <InvoiceDialog invoice={viewingInvoice} onClose={() => setViewingInvoice(null)} />
         </div>
@@ -239,8 +252,12 @@ function AdmissionCard({
 }: {
   admission: NonNullable<BillingOverview["admission"]>;
   currency: string;
-  onPay: (invoice: Invoice) => void;
+  onPay: (invoices: Invoice[]) => void;
 }) {
+  const payable = admission.invoices.filter(
+    (invoice) => invoice.status === "open" || invoice.status === "past_due",
+  );
+
   return (
     <motion.section
       aria-label="Confirm your admission"
@@ -253,9 +270,8 @@ function AdmissionCard({
         <div>
           <p className="font-mono text-label-sm text-secondary uppercase">Admission · one-time charges</p>
           <h2 className="mt-1 font-display text-headline-md text-on-surface">Confirm your admission</h2>
-          <p className="mt-1 max-w-xl text-body-sm text-on-surface-variant">
-            These two payments are collected once, on your admission day. Your monthly installments
-            continue separately from next month.
+          <p className="mt-1 text-body-sm text-on-surface-variant">
+            Collected once on admission day — installments continue monthly.
           </p>
         </div>
         {admission.total_due > 0 && (
@@ -264,6 +280,11 @@ function AdmissionCard({
             <p className="font-display text-headline-md text-secondary">
               {formatMoney(admission.total_due, currency)}
             </p>
+            {payable.length > 1 && (
+              <Button variant="success" size="sm" className="mt-2 w-full" onClick={() => onPay(payable)}>
+                Pay both together
+              </Button>
+            )}
           </div>
         )}
       </div>
@@ -282,9 +303,7 @@ function AdmissionCard({
                   {isRegistration ? "Registration fee" : "1st installment — advance"}
                 </p>
                 <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                  {isRegistration
-                    ? "One-time fee that confirms your registration."
-                    : "Your first monthly fee, paid in advance at admission."}
+                  {isRegistration ? "Confirms your registration." : "First month, paid in advance."}
                 </p>
                 <p className="mt-1 font-mono text-label-sm text-on-surface-variant">{invoice.number}</p>
               </div>
@@ -297,7 +316,7 @@ function AdmissionCard({
                     under review
                   </span>
                 ) : (
-                  <Button size="sm" className="mt-1.5" onClick={() => onPay(invoice)}>
+                  <Button variant="success" size="sm" className="mt-1.5" onClick={() => onPay([invoice])}>
                     Pay
                   </Button>
                 )}
@@ -438,6 +457,7 @@ function BillingStatCards({
                 </p>
               )}
               <Button
+                variant="success"
                 className="mt-4 w-full"
                 disabled={!overview.next_invoice}
                 onClick={() => {

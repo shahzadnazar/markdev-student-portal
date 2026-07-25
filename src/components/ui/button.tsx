@@ -15,6 +15,8 @@ const buttonVariants = cva(
           "border border-primary bg-transparent text-primary hover:bg-primary/10",
         ghost:
           "bg-transparent text-on-surface hover:bg-surface-container-low",
+        success:
+          "bg-success text-white hover:-translate-y-px hover:bg-success/90 active:translate-y-0",
         destructive:
           "bg-error text-on-error hover:-translate-y-px hover:bg-error/90 active:translate-y-0",
         link: "text-primary underline-offset-4 hover:underline",

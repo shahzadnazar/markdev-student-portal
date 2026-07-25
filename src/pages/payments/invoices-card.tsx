@@ -216,7 +216,7 @@ function InvoiceRow({
             </Button>
           )}
           {payable && (
-            <Button size="sm" onClick={() => onPay(invoice)}>
+            <Button variant="success" size="sm" onClick={() => onPay(invoice)}>
               {rejected && <RotateCcw className="size-4" aria-hidden="true" />}
               {rejected ? "Resubmit" : "Pay"}
             </Button>
