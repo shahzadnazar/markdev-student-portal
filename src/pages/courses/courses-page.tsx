@@ -94,7 +94,7 @@ export default function CoursesPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
       >
-        <Card className="mb-8">
+        <Card className="mb-6">
           <CardContent>
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
               <div className="relative min-w-0 flex-1">

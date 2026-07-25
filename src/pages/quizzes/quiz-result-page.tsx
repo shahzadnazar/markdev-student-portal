@@ -299,7 +299,7 @@ function QuizResultSkeleton() {
     <div>
       <Skeleton className="mb-4 h-8 w-32" />
 
-      <div className="mb-8 space-y-3">
+      <div className="mb-6 space-y-3">
         <Skeleton className="h-4 w-28" />
         <Skeleton className="h-10 w-2/3 max-w-xl" />
       </div>

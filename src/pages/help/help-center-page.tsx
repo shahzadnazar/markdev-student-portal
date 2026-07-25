@@ -83,7 +83,7 @@ export default function HelpCenterPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.1, ease: "easeOut" }}
-        className="mb-8 flex flex-wrap gap-2"
+        className="mb-6 flex flex-wrap gap-2"
       >
         <CategoryChip label="All" active={category === null} onClick={() => selectCategory(null)} />
         {categoriesQuery.isLoading &&

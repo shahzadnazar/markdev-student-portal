@@ -121,7 +121,7 @@ export default function AttendancePage() {
       />
 
       {/* Summary stats */}
-      <section aria-label="Attendance summary" className="mb-8">
+      <section aria-label="Attendance summary" className="mb-6">
         {summaryQuery.isLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }, (_, index) => (
@@ -179,7 +179,7 @@ export default function AttendancePage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.03, ease: "easeOut" }}
-        className="mb-8"
+        className="mb-6"
       >
         <Card className="gap-0 p-6">
           <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">

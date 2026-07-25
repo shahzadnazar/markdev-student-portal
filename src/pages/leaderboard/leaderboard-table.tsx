@@ -61,7 +61,36 @@ export function LeaderboardTable({ entries }: LeaderboardTableProps) {
 
   return (
     <Card className="gap-0 overflow-hidden py-0">
-      <div className="overflow-x-auto">
+      {/* Mobile: stacked rows instead of a horizontally-scrolling table */}
+      <ul className="divide-y divide-outline-variant/30 md:hidden">
+        {entries.map((entry, index) => (
+          <li
+            key={entry.user.id}
+            className={cn(
+              "flex items-center gap-3 px-4 py-3",
+              entry.is_me && "bg-primary/[0.06]",
+            )}
+          >
+            <span className="w-8 shrink-0 font-mono text-body-sm text-on-surface-variant">
+              #{index + 4}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-body-sm font-medium text-on-surface">
+                {entry.user.name}
+                {entry.is_me ? " (you)" : ""}
+              </p>
+              <p className="font-mono text-label-sm text-on-surface-variant">
+                {entry.streak_days}d streak · {entry.courses_completed} courses
+              </p>
+            </div>
+            <span className="shrink-0 font-mono text-body-sm font-semibold text-on-surface">
+              {entry.points.toLocaleString()}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[36rem] text-left">
           <caption className="sr-only">Leaderboard rankings below the top three</caption>
           <thead>

@@ -60,7 +60,7 @@ export default function SearchPage() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
-        className="relative mb-8 max-w-2xl"
+        className="relative mb-6 max-w-2xl"
       >
         <Search
           className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-outline"

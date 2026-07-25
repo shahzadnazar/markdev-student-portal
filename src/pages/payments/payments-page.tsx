@@ -125,16 +125,6 @@ function BillingHero({ overview }: { overview: BillingOverview }) {
       transition={{ duration: 0.35, ease: "easeOut" }}
       className="relative overflow-hidden rounded-2xl bg-primary px-5 py-4 text-white shadow-elevated md:px-6 md:py-5"
     >
-      {/* Decorative sheen and oversized watermark */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-0 right-0 h-full w-1/2 bg-gradient-to-l from-white/15 to-transparent"
-      />
-      <GraduationCap
-        aria-hidden="true"
-        className="pointer-events-none absolute -right-4 -bottom-6 size-28 text-white opacity-[0.06]"
-      />
-
       <div className="relative flex flex-wrap items-center justify-between gap-5">
         <div className="flex items-center gap-3.5">
           <div className="flex size-11 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10">
@@ -164,7 +154,7 @@ function BillingHero({ overview }: { overview: BillingOverview }) {
           </div>
         </div>
 
-        <dl className="flex gap-8 text-left">
+        <dl className="flex flex-wrap gap-x-8 gap-y-2 text-left">
           <div>
             <dt className="font-mono text-label-sm text-white/70 uppercase">Total tuition</dt>
             <dd className="mt-0.5 font-display text-headline-md">
