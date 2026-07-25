@@ -69,6 +69,13 @@ export default function PaymentsPage() {
       ) : overview && (overview.billing_active || overview.total_amount > 0) ? (
         <div className="space-y-6">
           <BillingHero overview={overview} />
+          {overview.admission ? (
+            <AdmissionCard
+              admission={overview.admission}
+              currency={overview.currency}
+              onPay={setPayingInvoice}
+            />
+          ) : null}
           <BillingStatCards overview={overview} onPay={setPayingInvoice} />
           {overview.installments ? (
             <InstallmentPlanCard info={overview.installments} currency={overview.currency} />
@@ -223,6 +230,86 @@ function InstallmentPlanCard({ info, currency }: { info: InstallmentInfo; curren
   );
 }
 
+/** One-time admission charges (registration fee + advance first installment)
+ *  called out separately so new students know exactly what to pay and why. */
+function AdmissionCard({
+  admission,
+  currency,
+  onPay,
+}: {
+  admission: NonNullable<BillingOverview["admission"]>;
+  currency: string;
+  onPay: (invoice: Invoice) => void;
+}) {
+  return (
+    <motion.section
+      aria-label="Confirm your admission"
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay: 0.03, ease: "easeOut" }}
+      className="rounded-3xl border border-secondary/25 bg-secondary/5 p-6"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="font-mono text-label-sm text-secondary uppercase">Admission · one-time charges</p>
+          <h2 className="mt-1 font-display text-headline-md text-on-surface">Confirm your admission</h2>
+          <p className="mt-1 max-w-xl text-body-sm text-on-surface-variant">
+            These two payments are collected once, on your admission day. Your monthly installments
+            continue separately from next month.
+          </p>
+        </div>
+        {admission.total_due > 0 && (
+          <div className="rounded-2xl bg-white px-5 py-3 text-right shadow-card">
+            <p className="font-mono text-label-sm text-on-surface-variant uppercase">Pay today</p>
+            <p className="font-display text-headline-md text-secondary">
+              {formatMoney(admission.total_due, currency)}
+            </p>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-2">
+        {admission.invoices.map((invoice) => {
+          const isRegistration = invoice.type === "registration";
+          const underReview = invoice.status === "pending";
+          return (
+            <div
+              key={invoice.id}
+              className="flex items-center justify-between gap-4 rounded-2xl bg-white p-4 shadow-card"
+            >
+              <div className="min-w-0">
+                <p className="text-body-md font-semibold text-on-surface">
+                  {isRegistration ? "Registration fee" : "1st installment — advance"}
+                </p>
+                <p className="mt-0.5 text-body-sm text-on-surface-variant">
+                  {isRegistration
+                    ? "One-time fee that confirms your registration."
+                    : "Your first monthly fee, paid in advance at admission."}
+                </p>
+                <p className="mt-1 font-mono text-label-sm text-on-surface-variant">{invoice.number}</p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="font-display text-body-lg font-semibold text-on-surface">
+                  {formatMoney(invoice.payable_total, invoice.currency)}
+                </p>
+                {underReview ? (
+                  <span className="mt-1.5 inline-block rounded-full bg-warning-container/70 px-2.5 py-1 font-mono text-label-sm text-on-warning-container">
+                    under review
+                  </span>
+                ) : (
+                  <Button size="sm" className="mt-1.5" onClick={() => onPay(invoice)}>
+                    Pay
+                  </Button>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </motion.section>
+  );
+}
+
 function BillingStatCards({
   overview,
   onPay,
@@ -234,7 +321,9 @@ function BillingStatCards({
   const underReview = overview.pending_invoice !== null;
   const active = overview.next_invoice;
   const defaulted = active?.status === "past_due";
-  const inGrace = active?.status === "open" && active.in_grace;
+  const dueToday =
+    !!active?.due_at && new Date(active.due_at).toDateString() === new Date().toDateString();
+  const inGrace = active?.status === "open" && active.in_grace && !dueToday;
   const cycleLabel = overview.billing_cycle
     ? (cycleLabels[overview.billing_cycle] ?? overview.billing_cycle)
     : null;
@@ -325,7 +414,7 @@ function BillingStatCards({
             <>
               {overview.next_due_at && (
                 <p className="mt-1 text-body-sm text-on-surface-variant">
-                  Due by {formatDate(overview.next_due_at)}
+                  {dueToday ? "Due today" : `Due by ${formatDate(overview.next_due_at)}`}
                 </p>
               )}
               {underReview && (

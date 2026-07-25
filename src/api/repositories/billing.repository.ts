@@ -30,9 +30,9 @@ export const billingRepository = {
     } else if (payload.channel) {
       form.append("channel", payload.channel);
     }
-    form.append("payer_name", payload.payer_name);
-    form.append("reference_no", payload.reference_no);
-    form.append("payment_date", payload.payment_date);
+    if (payload.payer_name) form.append("payer_name", payload.payer_name);
+    if (payload.reference_no) form.append("reference_no", payload.reference_no);
+    if (payload.payment_date) form.append("payment_date", payload.payment_date);
     if (payload.notes) form.append("notes", payload.notes);
     form.append("receipt", payload.receipt);
     return post<Transaction>(`/billing/invoices/${invoiceId}/submissions`, form, {

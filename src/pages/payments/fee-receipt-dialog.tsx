@@ -31,14 +31,16 @@ import type { BillingOverview, Invoice } from "@/types";
 const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
 
+const today = () => new Date().toISOString().slice(0, 10);
+
 const schema = z.object({
-  channel: z.string().min(1, "Choose the account you paid into"),
-  payer_name: z.string().trim().min(2, "Enter the name used on the payment"),
-  reference_no: z.string().trim().min(2, "Enter the bank/wallet transaction reference"),
+  channel: z.string().min(1, "Choose where you paid"),
+  payer_name: z.string().trim().optional(),
+  reference_no: z.string().trim().optional(),
   payment_date: z
     .string()
     .min(1, "Tell us when you made the payment")
-    .refine((value) => value <= new Date().toISOString().slice(0, 10), {
+    .refine((value) => value <= today(), {
       message: "The payment date cannot be in the future",
     }),
   notes: z.string().trim().max(500, "Keep notes under 500 characters").optional(),
@@ -65,7 +67,7 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { channel: "", payer_name: "", reference_no: "", payment_date: "", notes: "" },
+    defaultValues: { channel: "", payer_name: "", reference_no: "", payment_date: today(), notes: "" },
   });
 
   const receipt = form.watch("receipt") as File | undefined;
@@ -90,13 +92,16 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
   // Reset the form whenever a different invoice opens the dialog.
   useEffect(() => {
     if (invoice) {
-      form.reset({ channel: "", payer_name: "", reference_no: "", payment_date: "", notes: "" });
+      form.reset({ channel: "", payer_name: "", reference_no: "", payment_date: today(), notes: "" });
       setRootError(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [invoice?.id]);
 
   if (!invoice) return null;
+
+  const isRegistration = invoice.type === "registration";
+  const isAdvance = (invoice.title ?? "").toLowerCase().includes("advance");
 
   function attachFile(file: File | undefined) {
     if (!file) return;
@@ -112,8 +117,8 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
           ...(usingMethods
             ? { payment_method_id: Number(values.channel) }
             : { channel: values.channel }),
-          payer_name: values.payer_name,
-          reference_no: values.reference_no,
+          payer_name: values.payer_name || undefined,
+          reference_no: values.reference_no || undefined,
           payment_date: values.payment_date,
           notes: values.notes || undefined,
           receipt: values.receipt,
@@ -160,6 +165,18 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                 <p className="border-b border-outline-variant/40 pb-3 font-mono text-label-sm text-primary uppercase">
                   Receipt details
                 </p>
+                {(isRegistration || isAdvance) && (
+                  <p
+                    className={cn(
+                      "mt-4 rounded-lg px-3 py-2 text-body-sm",
+                      isRegistration ? "bg-secondary/10 text-secondary" : "bg-primary/10 text-primary",
+                    )}
+                  >
+                    {isRegistration
+                      ? "One-time registration fee — paying this confirms your admission."
+                      : "First monthly installment, paid in advance on your admission day."}
+                  </p>
+                )}
                 <dl className="mt-4 space-y-4">
                   <div>
                     <dt className="font-mono text-label-sm text-on-surface-variant">Invoice</dt>
@@ -209,6 +226,7 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
 
             {/* Right: the submission form */}
             <div className="space-y-4">
+              <p className="font-mono text-label-sm text-primary uppercase">1 · Pay to this account</p>
               <FormField
                 label="Payment method"
                 htmlFor="fee-channel"
@@ -221,7 +239,7 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                   }
                 >
                   <SelectTrigger id="fee-channel" aria-label="Payment method">
-                    <SelectValue placeholder="Where did you pay?" />
+                    <SelectValue placeholder="Choose a payment method…" />
                   </SelectTrigger>
                   <SelectContent>
                     {usingMethods
@@ -270,37 +288,7 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                 </div>
               )}
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormField
-                  label="Payer name"
-                  htmlFor="fee-payer"
-                  error={form.formState.errors.payer_name?.message}
-                >
-                  <Input id="fee-payer" placeholder="Name on the payment" {...form.register("payer_name")} />
-                </FormField>
-                <FormField
-                  label="Payment date"
-                  htmlFor="fee-date"
-                  error={form.formState.errors.payment_date?.message}
-                >
-                  <Input
-                    id="fee-date"
-                    type="date"
-                    max={new Date().toISOString().slice(0, 10)}
-                    {...form.register("payment_date")}
-                  />
-                </FormField>
-              </div>
-
-              <FormField
-                label="Transaction reference"
-                htmlFor="fee-reference"
-                error={form.formState.errors.reference_no?.message}
-                hint="The TID / reference number on your bank or wallet slip."
-              >
-                <Input id="fee-reference" placeholder="e.g. JC-4598812" {...form.register("reference_no")} />
-              </FormField>
-
+              <p className="pt-1 font-mono text-label-sm text-primary uppercase">2 · Submit your receipt</p>
               {/* Receipt dropzone with preview */}
               <div className="space-y-1.5">
                 <p className="text-body-sm font-medium text-on-surface">Attach receipt</p>
@@ -378,6 +366,37 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
                 )}
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <FormField
+                  label="Payment date"
+                  htmlFor="fee-date"
+                  error={form.formState.errors.payment_date?.message}
+                >
+                  <Input
+                    id="fee-date"
+                    type="date"
+                    max={new Date().toISOString().slice(0, 10)}
+                    {...form.register("payment_date")}
+                  />
+                </FormField>
+                <FormField
+                  label="Payer name (optional)"
+                  htmlFor="fee-payer"
+                  error={form.formState.errors.payer_name?.message}
+                >
+                  <Input id="fee-payer" placeholder="Name on the payment" {...form.register("payer_name")} />
+                </FormField>
+              </div>
+
+              <FormField
+                label="Transaction reference (optional)"
+                htmlFor="fee-reference"
+                error={form.formState.errors.reference_no?.message}
+                hint="If your slip shows a TID / reference number, add it here."
+              >
+                <Input id="fee-reference" placeholder="e.g. JC-4598812" {...form.register("reference_no")} />
+              </FormField>
+
               <FormField label="Notes (optional)" htmlFor="fee-notes" error={form.formState.errors.notes?.message}>
                 <Textarea id="fee-notes" rows={2} placeholder="Anything the reviewer should know…" {...form.register("notes")} />
               </FormField>
@@ -394,7 +413,7 @@ export function FeeReceiptDialog({ invoice, overview, onClose }: FeeReceiptDialo
               className="bg-success hover:bg-success/90"
             >
               {submitFee.isPending && <Spinner className="size-4 text-on-primary" />}
-              Confirm payment
+              Submit fee receipt
             </Button>
           </div>
         </form>

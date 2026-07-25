@@ -97,6 +97,8 @@ export interface BillingOverview {
   support_phone: string | null;
   /** Present when the plan is a monthly installment schedule. */
   installments: InstallmentInfo | null;
+  /** Unsettled one-time admission charges (registration fee + advance 1st installment). */
+  admission?: { invoices: Invoice[]; total_due: number } | null;
 }
 
 export interface InstallmentInfo {
@@ -130,9 +132,9 @@ export interface SubmitFeePayload {
   channel?: string;
   /** Configured payment method the student paid into. */
   payment_method_id?: number;
-  payer_name: string;
-  reference_no: string;
-  payment_date: string;
+  payer_name?: string;
+  reference_no?: string;
+  payment_date?: string;
   notes?: string;
   receipt: File;
 }

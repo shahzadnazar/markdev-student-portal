@@ -103,6 +103,13 @@ function InvoiceRow({
   const payable = invoice.status === "open" || invoice.status === "past_due";
   const rejected = invoice.latest_submission?.status === "rejected" && payable;
   const upcoming = invoice.status === "upcoming";
+  // Say what the invoice IS — the plan/course name is obvious from context.
+  const rowLabel =
+    invoice.type === "registration"
+      ? "Registration fee — confirms admission"
+      : (invoice.title ?? "").includes("—")
+        ? (invoice.title ?? "").split("—").slice(1).join("—").trim()
+        : invoice.title;
 
   return (
     <li
@@ -118,8 +125,18 @@ function InvoiceRow({
           </span>
           <div className="min-w-0">
             <p className="truncate font-mono text-label-md text-on-surface">{invoice.number}</p>
-            {invoice.title && (
-              <p className="truncate text-body-sm text-on-surface-variant">{invoice.title}</p>
+            {rowLabel && (
+              <p
+                className={cn(
+                  "truncate text-body-sm",
+                  invoice.type === "registration"
+                    ? "font-medium text-secondary"
+                    : "text-on-surface-variant",
+                )}
+                title={invoice.title ?? undefined}
+              >
+                {rowLabel}
+              </p>
             )}
           </div>
         </div>
@@ -135,12 +152,21 @@ function InvoiceRow({
         </p>
       )}
 
-      {invoice.status === "open" && invoice.in_grace && (
-        <p className="mt-3 rounded-lg bg-warning-container/60 px-3 py-2 text-body-sm text-on-warning-container">
-          <span className="font-semibold">Due date passed.</span> Pay now to avoid the daily
-          defaulter fine.
-        </p>
-      )}
+      {invoice.status === "open" &&
+        invoice.in_grace &&
+        (invoice.due_at && new Date(invoice.due_at).toDateString() === new Date().toDateString() ? (
+          <p className="mt-3 rounded-lg bg-primary/10 px-3 py-2 text-body-sm text-primary">
+            <span className="font-semibold">Due today.</span>
+            {invoice.type === "registration"
+              ? " Paying this confirms your admission."
+              : " Pay today to stay on schedule."}
+          </p>
+        ) : (
+          <p className="mt-3 rounded-lg bg-warning-container/60 px-3 py-2 text-body-sm text-on-warning-container">
+            <span className="font-semibold">Due date passed.</span> Pay now to avoid the daily
+            defaulter fine.
+          </p>
+        ))}
 
       {invoice.status === "past_due" && invoice.fine_amount > 0 && (
         <p className="mt-3 rounded-lg bg-error-container/60 px-3 py-2 text-body-sm text-on-error-container">
