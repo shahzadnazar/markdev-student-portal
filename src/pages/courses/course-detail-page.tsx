@@ -152,7 +152,7 @@ export default function CourseDetailPage() {
                     <div className="flex items-center gap-1.5">
                       <dt className="sr-only">Duration</dt>
                       <Clock className="size-3.5" aria-hidden="true" />
-                      <dd>{formatDuration(course.duration_minutes)}</dd>
+                      <dd>{course.duration_label ?? formatDuration(course.duration_minutes)}</dd>
                     </div>
                     <div className="flex items-center gap-1.5">
                       <dt className="sr-only">Lessons</dt>
@@ -324,7 +324,7 @@ export default function CourseDetailPage() {
               </div>
               <p className="font-mono text-label-sm text-on-surface-variant">
                 {course.modules_count} modules · {course.lessons_count} lessons ·{" "}
-                {formatDuration(course.duration_minutes)}
+                {course.duration_label ?? formatDuration(course.duration_minutes)}
               </p>
             </CardHeader>
             <CardContent>

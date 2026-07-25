@@ -82,7 +82,7 @@ export function CourseCard({ course }: { course: Course }) {
             <div className="mt-auto flex items-center gap-4 pt-4 text-on-surface-variant">
               <span className="flex items-center gap-1.5 font-mono text-label-sm">
                 <Clock className="size-3.5" aria-hidden="true" />
-                {formatDuration(course.duration_minutes)}
+                {course.duration_label ?? formatDuration(course.duration_minutes)}
               </span>
               <span className="flex items-center gap-1.5 font-mono text-label-sm">
                 <BookOpen className="size-3.5" aria-hidden="true" />

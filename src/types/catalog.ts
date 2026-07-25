@@ -32,6 +32,8 @@ export interface Course {
   instructor: InstructorSummary | null;
   tags: string[];
   duration_minutes: number;
+  /** Human program length set by the academy, e.g. "3 months". */
+  duration_label: string | null;
   modules_count: number;
   lessons_count: number;
   students_count: number;
