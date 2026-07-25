@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, Copy, FileText, Phone, UploadCloud, X } from "lucide-react";
+import { Check, CircleHelp, Copy, FileText, Phone, UploadCloud, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, type FieldPath } from "react-hook-form";
 import { z } from "zod";
@@ -285,7 +285,9 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
                       isRegistration ? "bg-secondary/10 text-secondary" : "bg-primary/10 text-primary",
                     )}
                   >
-                    {isRegistration ? "Confirms your admission." : "1st installment — advance."}
+                    {isRegistration
+                      ? "One-time registration fee — paying this confirms your admission."
+                      : "First monthly installment, paid in advance on your admission day."}
                   </p>
                 )}
 
@@ -339,13 +341,21 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
                 )}
               </div>
 
-              {overview.support_phone && (
-                <p className="flex items-center gap-2 px-1 text-body-sm text-on-surface-variant">
-                  <Phone className="size-4 shrink-0 text-primary" aria-hidden="true" />
-                  Need help?
-                  <span className="font-mono font-semibold text-primary">{overview.support_phone}</span>
+              <div className="rounded-2xl bg-surface-container-low/70 p-5">
+                <p className="flex items-center gap-2 font-mono text-label-md text-primary">
+                  <CircleHelp className="size-4" aria-hidden="true" />
+                  Need assistance?
                 </p>
-              )}
+                <p className="mt-2 text-body-sm text-on-surface-variant">
+                  If you face any issue during the payment process, reach out to our support team.
+                </p>
+                {overview.support_phone && (
+                  <p className="mt-3 flex items-center gap-2 font-mono text-body-md font-semibold text-primary">
+                    <Phone className="size-4" aria-hidden="true" />
+                    {overview.support_phone}
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Right: the submission form */}
@@ -387,7 +397,9 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
                 <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                   <p className="font-mono text-label-sm text-primary uppercase">Pay at the counter</p>
                   <p className="mt-2 text-body-sm text-on-surface">
-                    Pay cash at the counter → get a fee receipt → enter its number below + attach a photo.
+                    Hand the cash to the academy counter — you'll get a{" "}
+                    <span className="font-semibold">fee receipt</span>. Enter its receipt number
+                    below and attach a photo of it.
                   </p>
                   {selectedMethod.instructions && (
                     <p className="mt-2 text-body-sm text-on-surface-variant">{selectedMethod.instructions}</p>
@@ -430,6 +442,7 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
               <p className="pt-1 font-mono text-label-sm text-primary uppercase">2 · Submit your receipt</p>
               {/* Receipt dropzone with preview */}
               <div className="space-y-1.5">
+                <p className="text-body-sm font-medium text-on-surface">Attach receipt</p>
                 {receipt ? (
                   <div className="relative overflow-hidden rounded-xl border border-outline-variant/60">
                     {previewUrl ? (
@@ -482,9 +495,11 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
                       <UploadCloud className="size-5 text-primary" aria-hidden="true" />
                     </span>
                     <span className="font-mono text-body-sm font-medium text-on-surface">
-                      Attach receipt — drop or click
+                      Drop file here or click to upload
                     </span>
-                    <span className="text-label-sm text-on-surface-variant">PNG · JPG · PDF · max 5MB</span>
+                    <span className="text-body-sm text-on-surface-variant">
+                      Supported formats: PNG, JPG, PDF (max 5MB)
+                    </span>
                   </button>
                 )}
                 <input
@@ -528,11 +543,15 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
                 label={isCash ? "Receipt number" : "Transaction reference (optional)"}
                 htmlFor="fee-reference"
                 error={form.formState.errors.reference_no?.message}
-                hint={isCash ? "Printed on your fee receipt." : undefined}
+                hint={
+                  isCash
+                    ? "The number printed on the fee receipt you got at the counter."
+                    : "The TID / reference number on your bank or wallet slip."
+                }
               >
                 <Input
                   id="fee-reference"
-                  placeholder={isCash ? "e.g. RCP-1042" : "TID / reference, e.g. JC-4598812"}
+                  placeholder={isCash ? "e.g. RCP-1042" : "e.g. JC-4598812"}
                   {...form.register("reference_no")}
                 />
               </FormField>
