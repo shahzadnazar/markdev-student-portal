@@ -20,7 +20,7 @@ export default function CertificatesPage() {
       <PageHeader
         eyebrow="Achievements"
         title="Certificates"
-        description="Every certificate you've earned by completing a course — download them for your records or share them with the world."
+        description="Certificates are issued after you complete a course. YouTube lectures and secondary courses don't include a certificate."
       />
 
       <motion.section
@@ -47,7 +47,7 @@ export default function CertificatesPage() {
           <EmptyState
             icon={Award}
             title="No certificates yet"
-            description="Finish a course to earn your first certificate. Every completed course adds a verified credential to this shelf."
+            description="You'll get a certificate after completing a course. YouTube lectures and secondary courses don't include one."
             action={
               <Button variant="secondary" asChild>
                 <Link to={paths.courses}>

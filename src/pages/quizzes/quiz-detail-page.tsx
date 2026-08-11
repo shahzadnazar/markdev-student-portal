@@ -183,7 +183,7 @@ function RulesCard({ quiz }: { quiz: Quiz }) {
             value={
               quiz.time_limit_minutes != null
                 ? formatDuration(quiz.time_limit_minutes)
-                : "No limit"
+                : formatDuration(Math.max(1, quiz.questions_count))
             }
           />
           <RuleItem

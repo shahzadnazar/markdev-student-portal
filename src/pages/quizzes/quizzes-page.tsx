@@ -239,7 +239,7 @@ function QuizRow({ quiz }: { quiz: Quiz }) {
         <p className="mt-1.5 font-mono text-label-sm text-on-surface-variant">
           {quiz.questions_count} {quiz.questions_count === 1 ? "question" : "questions"} ·{" "}
           {quiz.total_points} pts ·{" "}
-          {quiz.time_limit_minutes != null ? formatDuration(quiz.time_limit_minutes) : "No limit"} ·{" "}
+          {formatDuration(quiz.time_limit_minutes ?? Math.max(1, quiz.questions_count))} ·{" "}
           {quiz.attempts_used}/{quiz.attempts_allowed} attempts
         </p>
       </div>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, FileQuestion, Send } from "lucide-react";
-import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Link, useBlocker, useLocation, useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ApiError } from "@/api/client";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -130,6 +130,25 @@ export default function QuizTakePage() {
     toast.error("Time is up — submitting your answers");
     handleSubmit("timeout");
   }, [handleSubmit]);
+
+  // Once the attempt is running, the browser back button (and any in-app
+  // navigation) is blocked until the quiz is submitted — leaving mid-attempt
+  // would burn the attempt with a zero score.
+  const attemptActive = attempt !== null && !submitAttempt.isPending && !submittedRef.current;
+  const blocker = useBlocker(
+    useCallback(() => attemptActive && !submittedRef.current, [attemptActive]),
+  );
+
+  useEffect(() => {
+    if (!attemptActive) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => {
+      window.removeEventListener("beforeunload", warn);
+    };
+  }, [attemptActive]);
 
   /* ------------------------- Starting / failure states ------------------------ */
 
@@ -353,6 +372,39 @@ export default function QuizTakePage() {
                   Submit quiz
                 </>
               )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Back / leave attempt blocked */}
+      <Dialog
+        open={blocker.state === "blocked"}
+        onOpenChange={(open) => {
+          if (!open) blocker.reset?.();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>You're in the middle of a quiz</DialogTitle>
+            <DialogDescription>
+              You can't go back or leave this page until you submit. If you leave now, your
+              answers will be submitted as they are — unanswered questions score zero.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => blocker.reset?.()}>
+              Keep taking the quiz
+            </Button>
+            <Button
+              onClick={() => {
+                blocker.reset?.();
+                handleSubmit("manual");
+              }}
+              disabled={submitAttempt.isPending}
+            >
+              <Send aria-hidden="true" />
+              Submit &amp; leave
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -114,17 +114,32 @@ export function InvoiceDialog({ invoice, onClose }: InvoiceDialogProps) {
             )}
 
             <div className="mt-6 flex gap-3">
-              {invoice.download_url && (
+              {paid && invoice.download_url ? (
                 <Button className="flex-1" asChild>
                   <a href={invoice.download_url} download>
                     <Download className="size-4" aria-hidden="true" />
-                    Download invoice
+                    Download receipt
                   </a>
                 </Button>
+              ) : (
+                <>
+                  {invoice.download_url && (
+                    <Button className="flex-1" asChild>
+                      <a href={invoice.download_url} download>
+                        <Download className="size-4" aria-hidden="true" />
+                        Download invoice
+                      </a>
+                    </Button>
+                  )}
+                  <Button
+                    variant={invoice.download_url ? "secondary" : "primary"}
+                    className="flex-1"
+                    onClick={onClose}
+                  >
+                    Close
+                  </Button>
+                </>
               )}
-              <Button variant={invoice.download_url ? "secondary" : "primary"} className="flex-1" onClick={onClose}>
-                Close
-              </Button>
             </div>
           </div>
         </div>

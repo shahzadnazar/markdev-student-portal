@@ -28,7 +28,7 @@ export function StatCard({ label, value, icon: Icon, hint, tone = "primary", cla
       transition={{ duration: 0.35, ease: "easeOut" }}
       className={className}
     >
-      <Card className="flex items-start gap-4 p-6">
+      <Card className="flex items-start gap-4 p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated active:translate-y-0 active:shadow-card">
         <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl", toneStyles[tone])}>
           <Icon className="size-5" aria-hidden="true" />
         </div>
