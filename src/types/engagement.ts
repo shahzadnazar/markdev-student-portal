@@ -189,6 +189,9 @@ export interface DashboardData {
     current_streak_days: number;
     attendance_rate: number;
     points: number;
+    /** True when an approved leave covers today. */
+    approved_leave_today?: boolean;
+    pending_leaves?: number;
   };
   continue_learning: CourseProgress[];
   upcoming: CalendarEvent[];
@@ -249,4 +252,41 @@ export interface SearchResults {
   assignments: { id: number; title: string; course_title: string; due_at: string | null }[];
   quizzes: { id: number; title: string; course_title: string }[];
   announcements: { id: number; title: string; published_at: string }[];
+}
+
+/* ---------------------------- Study materials ----------------------------- */
+
+/** A lesson file surfaced in the Study Materials screen. */
+export interface Material {
+  id: number;
+  name: string;
+  file_url: string | null;
+  file_type: string | null;
+  size_bytes: number;
+  uploaded_at: string | null;
+  is_read: boolean;
+  lesson: { id: number | null; title: string | null; type: string | null };
+  course: { id: number | null; title: string | null };
+}
+
+/* ---------------------------- Leave applications --------------------------- */
+
+export type LeaveStatus = "pending" | "approved" | "rejected";
+
+export interface LeaveApplication {
+  id: number;
+  from_date: string;
+  to_date: string;
+  days_count: number;
+  reason: string;
+  status: LeaveStatus;
+  review_note: string | null;
+  reviewed_at: string | null;
+  created_at: string;
+}
+
+export interface ApplyLeavePayload {
+  from_date: string;
+  to_date: string;
+  reason: string;
 }

@@ -14,6 +14,7 @@ import { Link } from "react-router-dom";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { PageHeader } from "@/components/shared/page-header";
+import { LeaveSection } from "./leave-section";
 import { StatCard } from "@/components/shared/stat-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -119,6 +120,8 @@ export default function AttendancePage() {
         title="Attendance"
         description="Your presence across live sessions — track your attendance rate and review every session you've joined or missed."
       />
+
+      <LeaveSection />
 
       {/* Summary stats */}
       <section aria-label="Attendance summary" className="mb-6">

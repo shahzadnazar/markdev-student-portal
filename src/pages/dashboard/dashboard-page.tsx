@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { Award, CalendarCheck, ClipboardList, Clock, Flame, GraduationCap, Trophy } from "lucide-react";
+import { Award, CalendarCheck, ClipboardList, Clock, Flame, GraduationCap, Trophy, Plane } from "lucide-react";
 import { ErrorState } from "@/components/shared/error-state";
 import { StatCard } from "@/components/shared/stat-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -133,6 +133,14 @@ const sectionMotion = {
 function DashboardContent({ data }: { data: DashboardData }) {
   return (
     <div className="space-y-8">
+      {data.stats.approved_leave_today ? (
+        <p className="flex items-center gap-2.5 rounded-xl bg-success-container/60 px-4 py-3 text-body-sm text-on-success-container">
+          <Plane className="size-4 shrink-0" aria-hidden="true" />
+          You're on approved leave today — your attendance is marked as leave and counts as
+          present.
+        </p>
+      ) : null}
+
       <StatsGrid stats={data.stats} />
 
       <motion.div {...sectionMotion} transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}>

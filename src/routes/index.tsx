@@ -26,6 +26,7 @@ const LeaderboardPage = lazy(() => import("@/pages/leaderboard/leaderboard-page"
 const AnnouncementsPage = lazy(() => import("@/pages/announcements/announcements-page"));
 const NotificationsPage = lazy(() => import("@/pages/notifications/notifications-page"));
 const BookmarksPage = lazy(() => import("@/pages/bookmarks/bookmarks-page"));
+const MaterialsPage = lazy(() => import("@/pages/materials/materials-page"));
 const SearchPage = lazy(() => import("@/pages/search/search-page"));
 const CalendarPage = lazy(() => import("@/pages/calendar/calendar-page"));
 const PaymentsPage = lazy(() => import("@/pages/payments/payments-page"));
@@ -84,6 +85,7 @@ const router = createBrowserRouter([
           { path: "/announcements", element: page(<AnnouncementsPage />) },
           { path: "/notifications", element: page(<NotificationsPage />) },
           { path: "/bookmarks", element: page(<BookmarksPage />) },
+          { path: "/materials", element: page(<MaterialsPage />) },
           { path: "/search", element: page(<SearchPage />) },
           { path: "/calendar", element: page(<CalendarPage />) },
           { path: "/payments", element: page(<PaymentsPage />) },

@@ -6,6 +6,9 @@ import type {
   AttendanceRecord,
   AttendanceSummary,
   Bookmark,
+  ApplyLeavePayload,
+  LeaveApplication,
+  Material,
   BookmarkableType,
   CalendarEvent,
   Certificate,
@@ -109,6 +112,26 @@ export const bookmarksRepository = {
   /** Removing is by target (type + id) so callers don't need the bookmark id. */
   remove(type: BookmarkableType, id: number) {
     return destroy(`/bookmarks/${type}/${id}`);
+  },
+};
+
+export const leavesRepository = {
+  list(params: ListParams = {}) {
+    return getRaw<Paginated<LeaveApplication>>("/leaves", { params });
+  },
+
+  apply(payload: ApplyLeavePayload) {
+    return post<LeaveApplication>("/leaves", payload);
+  },
+};
+
+export const materialsRepository = {
+  list() {
+    return get<Material[]>("/materials");
+  },
+
+  markRead(materialId: number) {
+    return post<{ id: number; is_read: boolean; read_at: string }>(`/materials/${materialId}/read`);
   },
 };
 

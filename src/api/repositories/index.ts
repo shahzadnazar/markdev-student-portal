@@ -11,6 +11,8 @@ export {
   dashboardRepository,
   helpRepository,
   leaderboardRepository,
+  leavesRepository,
+  materialsRepository,
   notificationsRepository,
   progressRepository,
   searchRepository,

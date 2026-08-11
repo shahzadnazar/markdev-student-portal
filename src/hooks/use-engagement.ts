@@ -3,6 +3,8 @@ import {
   announcementsRepository,
   attendanceRepository,
   bookmarksRepository,
+  leavesRepository,
+  materialsRepository,
   calendarRepository,
   certificatesRepository,
   dashboardRepository,
@@ -15,6 +17,7 @@ import {
 } from "@/api/repositories";
 import { qk } from "@/lib/query-keys";
 import type {
+  ApplyLeavePayload,
   AttendanceParams,
   BookmarkableType,
   Leaderboard,
@@ -129,6 +132,41 @@ export function useMarkAllNotificationsRead() {
     mutationFn: () => notificationsRepository.markAllRead(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    },
+  });
+}
+
+/* ---------------------------- Leave applications --------------------------- */
+
+export function useLeaveApplications() {
+  return useQuery({ queryKey: qk.leaves, queryFn: () => leavesRepository.list() });
+}
+
+export function useApplyForLeave() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ApplyLeavePayload) => leavesRepository.apply(payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qk.leaves });
+      void queryClient.invalidateQueries({ queryKey: qk.dashboard });
+    },
+  });
+}
+
+/* ---------------------------- Study materials ----------------------------- */
+
+export function useMaterials() {
+  return useQuery({ queryKey: qk.materials, queryFn: () => materialsRepository.list() });
+}
+
+export function useMarkMaterialRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (materialId: number) => materialsRepository.markRead(materialId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qk.materials });
+      void queryClient.invalidateQueries({ queryKey: qk.dashboard });
+      void queryClient.invalidateQueries({ queryKey: qk.progress });
     },
   });
 }

@@ -39,6 +39,8 @@ export const qk = {
 
   certificates: ["certificates"] as const,
   progress: ["progress"] as const,
+  materials: ["materials"] as const,
+  leaves: ["leaves"] as const,
   leaderboard: (period: Leaderboard["period"]) => ["leaderboard", period] as const,
 
   announcements: (params: object = {}) => ["announcements", params] as const,
