@@ -44,6 +44,7 @@ const statusConfig: Record<AssignmentStatus, { icon: LucideIcon; tile: string; l
   submitted: { icon: Send, tile: "bg-primary/10 text-primary", label: "Submitted" },
   graded: { icon: CheckCircle2, tile: "bg-success-container text-success", label: "Graded" },
   overdue: { icon: AlertCircle, tile: "bg-error-container text-error", label: "Overdue" },
+  returned: { icon: AlertCircle, tile: "bg-warning-container text-warning", label: "Returned" },
 };
 
 const emptyCopy: Record<StatusFilter, { icon: LucideIcon; title: string; description: string }> = {
@@ -72,6 +73,11 @@ const emptyCopy: Record<StatusFilter, { icon: LucideIcon; title: string; descrip
     icon: CheckCircle2,
     title: "Nothing overdue",
     description: "Great news — you haven't missed a single deadline.",
+  },
+  returned: {
+    icon: Send,
+    title: "Nothing returned",
+    description: "Assignments an instructor sends back for changes will appear here.",
   },
 };
 

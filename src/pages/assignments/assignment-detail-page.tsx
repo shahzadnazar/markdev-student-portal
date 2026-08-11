@@ -79,7 +79,10 @@ export default function AssignmentDetailPage() {
   const assignment = assignmentQuery.data;
   if (!assignment) return null;
 
-  const canSubmit = assignment.status === "pending" || assignment.status === "overdue";
+  const canSubmit =
+    assignment.status === "pending" ||
+    assignment.status === "overdue" ||
+    assignment.status === "returned";
 
   return (
     <div>
@@ -162,6 +165,18 @@ function StatusBanner({ assignment }: { assignment: Assignment }) {
             {submission
               ? `You handed this in ${formatDateTime(submission.submitted_at)}. We'll let you know as soon as it's graded.`
               : "Your work is in. We'll let you know as soon as it's graded."}
+          </AlertDescription>
+        </Alert>
+      );
+    case "returned":
+      return (
+        <Alert variant="warning">
+          <AlertCircle aria-hidden="true" />
+          <AlertTitle>Returned for changes</AlertTitle>
+          <AlertDescription>
+            {submission?.feedback
+              ? `Your instructor sent this back with feedback: "${submission.feedback}" — update your work below and resubmit.`
+              : "Your instructor sent this back for changes — update your work below and resubmit."}
           </AlertDescription>
         </Alert>
       );
@@ -274,6 +289,7 @@ function SubmissionFormCard({
 }) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isOverdue = assignment.status === "overdue";
+  const isResubmission = assignment.status === "returned";
 
   const {
     register,
@@ -285,7 +301,7 @@ function SubmissionFormCard({
     formState: { errors, isSubmitted },
   } = useForm<SubmissionFormValues>({
     resolver: zodResolver(submissionSchema),
-    defaultValues: { content: "", file: null },
+    defaultValues: { content: assignment.submission?.content ?? "", file: null },
   });
 
   const file = watch("file");
@@ -307,9 +323,11 @@ function SubmissionFormCard({
       {
         onSuccess: () => {
           toast.success(
-            isOverdue
-              ? "Your work is in — it has been flagged as a late submission."
-              : "Your work has been submitted. Good luck!",
+            isResubmission
+              ? "Resubmitted — your instructor will take another look."
+              : isOverdue
+                ? "Your work is in — it has been flagged as a late submission."
+                : "Your work has been submitted. Good luck!",
           );
           reset();
           if (fileInputRef.current) fileInputRef.current.value = "";
@@ -339,8 +357,12 @@ function SubmissionFormCard({
     <Card>
       <CardHeader>
         <p className="font-mono text-label-sm text-primary uppercase">Submission</p>
-        <CardTitle>Submit your work</CardTitle>
-        <CardDescription>Write a response, attach a file, or both.</CardDescription>
+        <CardTitle>{isResubmission ? "Resubmit your work" : "Submit your work"}</CardTitle>
+        <CardDescription>
+          {isResubmission
+            ? "Apply your instructor's feedback, then send it back for grading."
+            : "Write a response, attach a file, or both."}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <form className="space-y-5" onSubmit={(event) => void onSubmit(event)} noValidate>

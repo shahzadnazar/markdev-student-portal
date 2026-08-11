@@ -10,7 +10,7 @@ export interface CourseRef {
 
 /* ------------------------------ Assignments ------------------------------ */
 
-export type AssignmentStatus = "pending" | "submitted" | "graded" | "overdue";
+export type AssignmentStatus = "pending" | "submitted" | "graded" | "overdue" | "returned";
 
 export interface Assignment {
   id: number;
