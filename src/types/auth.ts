@@ -4,7 +4,7 @@ export interface User {
   email: string;
   avatar_url: string | null;
   phone: string | null;
-  bio: string | null;
+  //bio: string | null;
   headline: string | null;
   /** Spatie role names, e.g. ["student"]. */
   roles: string[];
@@ -12,6 +12,7 @@ export interface User {
   permissions: string[];
   email_verified_at: string | null;
   created_at: string;
+  is_active: boolean;
 }
 
 export interface LoginPayload {

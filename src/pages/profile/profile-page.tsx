@@ -17,18 +17,31 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { Textarea } from "@/components/ui/textarea";
+// import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/auth-context";
 import { formatDate, initials } from "@/lib/format";
 import type { User } from "@/types";
 
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 
+// const profileSchema = z.object({
+//   name: z.string().trim().min(2, "Your name must be at least 2 characters"),
+//   headline: z.string().trim().max(120, "Keep your headline under 120 characters").optional(),
+//   phone: z.string().trim().max(30, "That phone number looks too long").optional(),
+//   bio: z.string().trim().max(500, "Keep your bio under 500 characters").optional(),
+// });
 const profileSchema = z.object({
   name: z.string().trim().min(2, "Your name must be at least 2 characters"),
-  headline: z.string().trim().max(120, "Keep your headline under 120 characters").optional(),
-  phone: z.string().trim().max(30, "That phone number looks too long").optional(),
-  bio: z.string().trim().max(500, "Keep your bio under 500 characters").optional(),
+  headline: z
+    .string()
+    .trim()
+    .max(120, "Keep your headline under 120 characters")
+    .optional(),
+  phone: z
+    .string()
+    .trim()
+    .max(30, "That phone number looks too long")
+    .optional(),
 });
 
 const passwordSchema = z
@@ -57,7 +70,11 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div>
-        <PageHeader eyebrow="Account" title="Profile" description="How you appear across MarkDev." />
+        <PageHeader
+          eyebrow="Account"
+          title="Profile"
+          description="How you appear across MarkDev."
+        />
         <PageLoader label="Loading your profile" />
       </div>
     );
@@ -65,7 +82,11 @@ export default function ProfilePage() {
 
   return (
     <div>
-      <PageHeader eyebrow="Account" title="Profile" description="How you appear across MarkDev." />
+      <PageHeader
+        eyebrow="Account"
+        title="Profile"
+        description="How you appear across MarkDev."
+      />
 
       <div className="grid gap-6 lg:grid-cols-[22rem_1fr]">
         <motion.div
@@ -83,6 +104,7 @@ export default function ProfilePage() {
           className="space-y-6"
         >
           <ProfileDetailsCard user={user} setUser={setUser} />
+          <StudentInformationCard user={user} />
           <ChangePasswordCard />
         </motion.div>
       </div>
@@ -100,7 +122,11 @@ function IdentityCard({ user, setUser }: UserCardProps) {
       toast.success("Profile photo updated");
     },
     onError: (error) => {
-      toast.error(error instanceof ApiError ? error.message : "Couldn't update your photo");
+      toast.error(
+        error instanceof ApiError
+          ? error.message
+          : "Couldn't update your photo",
+      );
     },
   });
 
@@ -152,9 +178,15 @@ function IdentityCard({ user, setUser }: UserCardProps) {
         </Button>
       </div>
 
-      <h2 className="mt-4 font-display text-headline-md text-on-surface">{user.name}</h2>
+      <h2 className="mt-4 font-display text-headline-md text-on-surface">
+        {user.name}
+      </h2>
       <p className="text-body-sm text-on-surface-variant">{user.email}</p>
-      {user.headline && <p className="mt-2 text-body-sm text-on-surface-variant">{user.headline}</p>}
+      {user.headline && (
+        <p className="mt-2 text-body-sm text-on-surface-variant">
+          {user.headline}
+        </p>
+      )}
 
       {user.roles.length > 0 && (
         <div className="mt-4 flex flex-wrap justify-center gap-2">
@@ -181,11 +213,12 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
       name: user.name,
       headline: user.headline ?? "",
       phone: user.phone ?? "",
-      bio: user.bio ?? "",
+      // bio: user.bio ?? "",
     },
   });
 
-  const bioLength = form.watch("bio")?.length ?? 0;
+ 
+  // const bioLength = form.watch("bio")?.length ?? 0;
 
   const mutation = useMutation({
     mutationFn: (values: ProfileValues) =>
@@ -193,7 +226,7 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
         name: values.name,
         headline: values.headline || null,
         phone: values.phone || null,
-        bio: values.bio || null,
+        //bio: values.bio || null,
       }),
     onSuccess: (updated) => {
       setUser(updated);
@@ -202,7 +235,7 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
         name: updated.name,
         headline: updated.headline ?? "",
         phone: updated.phone ?? "",
-        bio: updated.bio ?? "",
+        //bio: updated.bio ?? "",
       });
       toast.success("Profile updated");
     },
@@ -210,7 +243,9 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
       if (error instanceof ApiError) {
         setRootError(error.message);
         for (const [field, messages] of Object.entries(error.errors)) {
-          form.setError(field as FieldPath<ProfileValues>, { message: messages[0] });
+          form.setError(field as FieldPath<ProfileValues>, {
+            message: messages[0],
+          });
         }
       } else {
         setRootError("Couldn't save your profile. Please try again.");
@@ -222,7 +257,9 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
     <Card className="p-6">
       <div className="mb-5 flex items-center gap-2.5">
         <UserRound className="size-4 text-primary" aria-hidden="true" />
-        <h2 className="font-mono text-label-md text-on-surface uppercase">Profile details</h2>
+        <h2 className="font-mono text-label-md text-on-surface uppercase">
+          Profile details
+        </h2>
       </div>
 
       <form
@@ -233,10 +270,22 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
         <FormError message={rootError} />
 
         <div className="grid gap-5 sm:grid-cols-2">
-          <FormField label="Full name" htmlFor="profile-name" error={form.formState.errors.name?.message}>
-            <Input id="profile-name" autoComplete="name" {...form.register("name")} />
+          <FormField
+            label="Full name"
+            htmlFor="profile-name"
+            error={form.formState.errors.name?.message}
+          >
+            <Input
+              id="profile-name"
+              autoComplete="name"
+              {...form.register("name")}
+            />
           </FormField>
-          <FormField label="Phone" htmlFor="profile-phone" error={form.formState.errors.phone?.message}>
+          <FormField
+            label="Phone"
+            htmlFor="profile-phone"
+            error={form.formState.errors.phone?.message}
+          >
             <Input
               id="profile-phone"
               type="tel"
@@ -256,18 +305,14 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
           <Input id="profile-headline" {...form.register("headline")} />
         </FormField>
 
-        <FormField
-          label="Bio"
-          htmlFor="profile-bio"
-          error={form.formState.errors.bio?.message}
-          hint={`${bioLength}/500 characters`}
-        >
-          <Textarea id="profile-bio" rows={4} {...form.register("bio")} />
-        </FormField>
-
         <div className="flex justify-end">
-          <Button type="submit" disabled={!form.formState.isDirty || mutation.isPending}>
-            {mutation.isPending && <Spinner className="size-4 text-on-primary" />}
+          <Button
+            type="submit"
+            disabled={!form.formState.isDirty || mutation.isPending}
+          >
+            {mutation.isPending && (
+              <Spinner className="size-4 text-on-primary" />
+            )}
             Save changes
           </Button>
         </div>
@@ -275,16 +320,64 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
     </Card>
   );
 }
+ function StudentInformationCard({ user }: { user: User }) {
+    return (
+      <Card className="p-6">
+        <div className="mb-5 flex items-center gap-2.5">
+          <UserRound className="size-4 text-primary" aria-hidden="true" />
+          <h2 className="font-mono text-label-md text-on-surface uppercase">
+            Student information
+          </h2>
+        </div>
 
+        <div className="grid gap-5 sm:grid-cols-2">
+          <div>
+            <p className="text-label-sm text-on-surface-variant">
+              Current course
+            </p>
+            <p className="mt-1 text-body-md text-on-surface">Web Development</p>
+          </div>
+
+          <div>
+            <p className="text-label-sm text-on-surface-variant">
+              Enrollment date
+            </p>
+            <p className="mt-1 text-body-md text-on-surface">August 13, 2026</p>
+          </div>
+
+          <div>
+            <p className="text-label-sm text-on-surface-variant">Status</p>
+            <div className="mt-1">
+              <Badge variant="secondary">
+                {user.is_active ? "Active" : "Inactive"}
+              </Badge>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-label-sm text-on-surface-variant">
+              Emergency number
+            </p>
+            <p className="mt-1 text-body-md text-on-surface">+92 300 0000000</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 function ChangePasswordCard() {
   const [rootError, setRootError] = useState<string | null>(null);
   const form = useForm<PasswordValues>({
     resolver: zodResolver(passwordSchema),
-    defaultValues: { current_password: "", password: "", password_confirmation: "" },
+    defaultValues: {
+      current_password: "",
+      password: "",
+      password_confirmation: "",
+    },
   });
 
   const mutation = useMutation({
-    mutationFn: (values: PasswordValues) => authRepository.changePassword(values),
+    mutationFn: (values: PasswordValues) =>
+      authRepository.changePassword(values),
     onSuccess: () => {
       setRootError(null);
       form.reset();
@@ -294,7 +387,9 @@ function ChangePasswordCard() {
       if (error instanceof ApiError) {
         setRootError(error.message);
         for (const [field, messages] of Object.entries(error.errors)) {
-          form.setError(field as FieldPath<PasswordValues>, { message: messages[0] });
+          form.setError(field as FieldPath<PasswordValues>, {
+            message: messages[0],
+          });
         }
       } else {
         setRootError("Couldn't change your password. Please try again.");
@@ -306,7 +401,9 @@ function ChangePasswordCard() {
     <Card className="p-6">
       <div className="mb-5 flex items-center gap-2.5">
         <KeyRound className="size-4 text-primary" aria-hidden="true" />
-        <h2 className="font-mono text-label-md text-on-surface uppercase">Change password</h2>
+        <h2 className="font-mono text-label-md text-on-surface uppercase">
+          Change password
+        </h2>
       </div>
 
       <form
@@ -358,7 +455,9 @@ function ChangePasswordCard() {
 
         <div className="flex justify-end">
           <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending && <Spinner className="size-4 text-on-primary" />}
+            {mutation.isPending && (
+              <Spinner className="size-4 text-on-primary" />
+            )}
             Update password
           </Button>
         </div>

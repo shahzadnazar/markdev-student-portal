@@ -140,7 +140,9 @@ interface CourseProgressGroupsProps {
 
 /** "Courses" — enrolled courses split into in-progress and completed groups. */
 export function CourseProgressGroups({ courses }: CourseProgressGroupsProps) {
-  const inProgress = courses.filter((item) => !isCourseCompleted(item));
+  const inProgress = courses
+  .filter((item) => !isCourseCompleted(item))
+  .slice(0, 1);
   const completed = courses.filter(isCourseCompleted);
 
   return (

@@ -1,5 +1,11 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, Clock, Flame, GraduationCap, ListChecks, Sparkles } from "lucide-react";
+import {
+  Clock,
+  Flame,
+  GraduationCap,
+  ListChecks,
+  Sparkles,
+} from "lucide-react";
 import { ErrorState } from "@/components/shared/error-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { StatCard } from "@/components/shared/stat-card";
@@ -12,23 +18,30 @@ import { CourseProgressGroups } from "./course-progress-groups";
 import { ProgressActivityCard } from "./progress-activity-card";
 
 function ProgressStats({ overview }: { overview: ProgressOverview }) {
-  const inProgressCount = Math.max(0, overview.enrolled_courses - overview.completed_courses);
+  const inProgressCount = Math.max(
+    0,
+    overview.enrolled_courses - overview.completed_courses,
+  );
 
   return (
-    <section aria-label="Progress summary" className="grid grid-cols-2 gap-4 md:grid-cols-3">
+    <section
+      aria-label="Progress summary"
+      className="grid grid-cols-2 gap-4 md:grid-cols-3"
+    >
       <StatCard
-        label="Enrolled courses"
-        value={overview.enrolled_courses}
+        label="Enrolled course"
+        value={overview.courses[0]?.course.title ?? "No course"}
         icon={GraduationCap}
-        hint={`${inProgressCount} still in progress`}
+        hint="Your current course"
+        className="min-w-0"
       />
-      <StatCard
+      {/* <StatCard
         label="Courses completed"
         value={overview.completed_courses}
         icon={CheckCircle2}
         tone="success"
         hint="Finished end to end"
-      />
+      /> */}
       <StatCard
         label="Lessons completed"
         value={formatCompact(overview.completed_lessons)}
