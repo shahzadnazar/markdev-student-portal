@@ -18,10 +18,11 @@ import { CourseProgressGroups } from "./course-progress-groups";
 import { ProgressProgressCard } from "./progress-activity-card";
 
 function ProgressStats({ overview }: { overview: ProgressOverview }) {
-  const inProgressCount = Math.max(
-    0,
-    overview.enrolled_courses - overview.completed_courses,
-  );
+  // Unused while the "In progress" StatCard below is commented out.
+  // const inProgressCount = Math.max(
+  //   0,
+  //   overview.enrolled_courses - overview.completed_courses,
+  // );
 
   return (
     <section

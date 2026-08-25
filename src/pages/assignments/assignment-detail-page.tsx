@@ -268,14 +268,19 @@ function BriefCard({ assignment }: { assignment: Assignment }) {
 
 /* ---------------------------- Submission (form) --------------------------- */
 
-const submissionSchema = z.object({
-  /** Optional question for the instructor — sent alongside the submitted file. */
-  query: z.string(),
-  file: z
-    .instanceof(File, { message: "Attach a valid file." })
-    .nullable()
-    .refine((file) => file !== null, { message: "Attach your work to submit." }),
-});
+const submissionSchema = z
+  .object({
+    /** Optional question for the instructor — sent alongside the submitted file. */
+    query: z.string(),
+    file: z.instanceof(File, { message: "Attach a valid file." }).nullable(),
+  })
+  // Checked at object level so the inferred type stays `File | null` — the form
+  // initialises and clears the field with null, which a field-level narrowing
+  // refine would reject at compile time.
+  .refine((values) => values.file !== null, {
+    message: "Attach your work to submit.",
+    path: ["file"],
+  });
 
 type SubmissionFormValues = z.infer<typeof submissionSchema>;
 
