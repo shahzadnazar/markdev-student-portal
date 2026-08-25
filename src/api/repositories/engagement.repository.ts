@@ -24,6 +24,7 @@ import type {
   SearchResults,
   UserSettings,
   DailyAttendancePage,
+   Note,
 } from "@/types";
 
 export const dashboardRepository = {
@@ -31,6 +32,7 @@ export const dashboardRepository = {
     return get<DashboardData>("/dashboard");
   },
 };
+
 
 export const attendanceRepository = {
   list(params: AttendanceParams = {}) {
@@ -57,6 +59,7 @@ export const progressRepository = {
     return get<ProgressOverview>("/progress");
   },
 };
+
 
 export const leaderboardRepository = {
   get(period: Leaderboard["period"] = "weekly") {
@@ -172,5 +175,27 @@ export const settingsRepository = {
 
   update(payload: Partial<UserSettings>) {
     return put<UserSettings>("/settings", payload);
+  },
+};
+export const lessonActivityRepository = {
+  track(courseId: string | number, lessonId: string | number, minutes: number) {
+    return post<void>(
+      `/courses/${courseId}/lessons/${lessonId}/activity`,
+      { minutes },
+    );
+  },
+};
+
+export const notesRepository = {
+  list() {
+    return get<Note[]>("/notes");
+  },
+
+  markRead(noteId: number) {
+    return post<{
+      id: number;
+      is_read: boolean;
+      read_at: string | null;
+    }>(`/notes/${noteId}/read`);
   },
 };

@@ -4,6 +4,7 @@ import {
   BarChart3,
   Bookmark,
   BookOpen,
+  NotebookPen,
   CalendarDays,
   ClipboardList,
   CreditCard,
@@ -14,7 +15,9 @@ import {
   Megaphone,
   Settings,
   Trophy,
-  UserRound, FolderOpen, } from "lucide-react";
+  UserRound,
+  FolderOpen,
+} from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { paths } from "@/routes/paths";
 import { cn } from "@/lib/utils";
@@ -36,7 +39,12 @@ const sections: NavSection[] = [
   {
     title: "Overview",
     items: [
-      { label: "Dashboard", to: paths.dashboard, icon: LayoutDashboard, end: true },
+      {
+        label: "Dashboard",
+        to: paths.dashboard,
+        icon: LayoutDashboard,
+        end: true,
+      },
       { label: "Courses", to: paths.courses, icon: BookOpen },
       { label: "Calendar", to: paths.calendar, icon: CalendarDays },
     ],
@@ -47,6 +55,11 @@ const sections: NavSection[] = [
       { label: "Assignments", to: paths.assignments, icon: ClipboardList },
       { label: "Study materials", to: paths.materials, icon: FolderOpen },
       { label: "Quizzes", to: paths.quizzes, icon: FileQuestion },
+      {
+        label: "Notes",
+        to: paths.notes,
+        icon: NotebookPen,
+      },
       { label: "Progress", to: paths.progress, icon: BarChart3 },
       { label: "Attendance", to: paths.attendance, icon: ListChecks },
       { label: "Certificates", to: paths.certificates, icon: Award },
@@ -87,15 +100,24 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
       )}
     >
       <div className="flex h-16 shrink-0 items-center px-6">
-        <NavLink to={paths.dashboard} onClick={onNavigate} aria-label="MarkDev dashboard">
+        <NavLink
+          to={paths.dashboard}
+          onClick={onNavigate}
+          aria-label="MarkDev dashboard"
+        >
           <BrandWordmark />
         </NavLink>
       </div>
 
-      <nav className="scrollbar-thin flex-1 overflow-y-auto px-3 pt-2 pb-6" aria-label="Primary">
+      <nav
+        className="scrollbar-thin flex-1 overflow-y-auto px-3 pt-2 pb-6"
+        aria-label="Primary"
+      >
         {sections.map((section) => (
           <div key={section.title} className="mb-6">
-            <p className="mb-1.5 px-3 font-mono text-label-sm text-outline uppercase">{section.title}</p>
+            <p className="mb-1.5 px-3 font-mono text-label-sm text-outline uppercase">
+              {section.title}
+            </p>
             <ul className="space-y-0.5">
               {section.items.map((item) => (
                 <li key={item.to}>
@@ -125,7 +147,9 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
                         <item.icon
                           className={cn(
                             "size-[18px] shrink-0 transition-colors",
-                            isActive ? "text-primary" : "text-outline group-hover:text-on-surface-variant",
+                            isActive
+                              ? "text-primary"
+                              : "text-outline group-hover:text-on-surface-variant",
                           )}
                           aria-hidden="true"
                         />

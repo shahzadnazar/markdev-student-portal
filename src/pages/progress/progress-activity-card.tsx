@@ -1,152 +1,309 @@
-import { cssToken } from "@/lib/css-token";
 import { useMemo } from "react";
-import { format, parseISO, startOfWeek } from "date-fns";
+import { format, parseISO } from "date-fns";
 import {
-  Bar,
-  BarChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDate, formatDuration } from "@/lib/format";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+
 import type { ProgressOverview } from "@/types";
 
-type ActivityPoint = ProgressOverview["activity"][number];
+type ProgressPoint = ProgressOverview["progress"][number];
 
-interface WeeklyPoint {
-  /** ISO date of the Monday starting the week. */
-  week_start: string;
-  minutes: number;
-}
-
-/**
- * Chart colors are pinned to the design tokens in src/index.css —
- * SVG presentation attributes are the one place we can't lean on classes.
- */
 const chart = {
-  bar: cssToken("--color-primary", "#124389"),
-  grid: "#e8e8ea", // --color-surface-container-high
-  tick: "#727784", // --color-outline
-} as const;
+  lessons: "#124389",
+  quizzes: "#7C5CE5",
+  assignments: "#3B82A0",
+  attendance: "#16A34A",
+  notes: "#F59E0B",
+  grid: "#e8e8ea",
+  tick: "#727784",
+};
 
-const monoFont = "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace";
+const monoFont =
+  "'JetBrains Mono Variable', 'JetBrains Mono', ui-monospace, monospace";
 
-/** Fold ~84 daily points into 12 weekly sums so the chart stays legible. */
-function toWeekly(activity: ActivityPoint[]): WeeklyPoint[] {
-  const buckets = new Map<string, number>();
-  for (const point of activity) {
-    const weekStart = format(startOfWeek(parseISO(point.date), { weekStartsOn: 1 }), "yyyy-MM-dd");
-    buckets.set(weekStart, (buckets.get(weekStart) ?? 0) + point.minutes);
-  }
-  return [...buckets.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([week_start, minutes]) => ({ week_start, minutes }));
-}
-
-/** Compact tick label: minutes under an hour, whole hours above. */
-function minutesTick(value: number): string {
-  return value >= 60 ? `${Math.round(value / 60)}h` : `${value}m`;
-}
-
-interface WeeklyTooltipProps {
+interface ProgressTooltipProps {
   active?: boolean;
-  payload?: ReadonlyArray<{ payload?: WeeklyPoint }>;
+  payload?: ReadonlyArray<{
+    payload?: ProgressPoint;
+  }>;
 }
 
-function WeeklyTooltip({ active, payload }: WeeklyTooltipProps) {
+function ProgressTooltip({
+  active,
+  payload,
+}: ProgressTooltipProps) {
   const point = payload?.[0]?.payload;
-  if (!active || !point) return null;
+
+  if (!active || !point) {
+    return null;
+  }
+
+  const total =
+    point.lessons +
+    point.quizzes +
+    point.assignments +
+    point.attendance +
+    point.notes;
+
   return (
-    <div className="rounded-xl bg-white px-3.5 py-2.5 shadow-elevated ring-1 ring-outline-variant/40">
-      <p className="font-mono text-label-sm text-on-surface-variant uppercase">
-        Week of {formatDate(point.week_start)}
+    <div className="rounded-xl bg-white px-4 py-3 shadow-elevated ring-1 ring-outline-variant/40">
+      <p className="font-mono text-label-sm uppercase text-on-surface-variant">
+        {format(parseISO(point.month), "MMMM yyyy")}
       </p>
-      <p className="mt-0.5 text-body-sm font-semibold text-on-surface">
-        {point.minutes > 0 ? formatDuration(point.minutes) : "No activity"}
-      </p>
+
+      <div className="mt-2 space-y-1.5 text-body-sm">
+        <p>
+          <span className="font-semibold">
+            {point.lessons}
+          </span>{" "}
+          lessons completed
+        </p>
+
+        <p>
+          <span className="font-semibold">
+            {point.quizzes}
+          </span>{" "}
+          quizzes completed
+        </p>
+
+        <p>
+          <span className="font-semibold">
+            {point.assignments}
+          </span>{" "}
+          assignments submitted
+        </p>
+
+        <p>
+          <span className="font-semibold">
+            {point.attendance}%
+          </span>{" "}
+          attendance
+        </p>
+
+        <p>
+          <span className="font-semibold">
+            {point.notes}
+          </span>{" "}
+          notes read
+        </p>
+
+        <p className="border-t pt-1.5 font-semibold">
+          {total} total activities
+        </p>
+      </div>
     </div>
   );
 }
 
-interface ProgressActivityCardProps {
-  activity: ActivityPoint[];
+interface ProgressProgressCardProps {
+  progress: ProgressPoint[];
 }
 
-/** "Learning activity" — weekly learning time over the trailing 12 weeks. */
-export function ProgressActivityCard({ activity }: ProgressActivityCardProps) {
-  const weekly = useMemo(() => toWeekly(activity), [activity]);
-  const totalMinutes = useMemo(
-    () => activity.reduce((sum, point) => sum + point.minutes, 0),
-    [activity],
+export function ProgressProgressCard({
+  progress,
+}: ProgressProgressCardProps) {
+  const totalActivities = useMemo(
+    () =>
+      progress.reduce(
+        (total, point) =>
+          total +
+          point.lessons +
+          point.quizzes +
+          point.assignments +
+          point.notes,
+        0,
+      ),
+    [progress],
   );
 
   return (
     <Card>
       <CardHeader>
-        <p className="font-mono text-label-sm text-primary uppercase">Last 12 weeks</p>
-        <CardTitle>Learning activity</CardTitle>
+        <p className="font-mono text-label-sm uppercase text-primary">
+          Last 12 months
+        </p>
+
+        <CardTitle>Learning progress</CardTitle>
+
         <CardDescription>
-          {totalMinutes > 0
-            ? `${formatDuration(totalMinutes)} of learning logged across the last twelve weeks.`
-            : "Your weekly learning time will chart here as you study."}
+          {totalActivities > 0
+            ? `${totalActivities} learning activities completed across the last twelve months.`
+            : "Your lessons, quizzes, assignments, attendance and notes will appear here."}
         </CardDescription>
       </CardHeader>
+
       <CardContent>
-        {weekly.length === 0 ? (
+        {progress.length === 0 ? (
           <p className="flex h-64 items-center justify-center text-center text-body-sm text-on-surface-variant">
-            No activity recorded yet — open a lesson to start the chart.
+            No progress recorded yet.
           </p>
         ) : (
           <div
-            className="h-64 w-full"
+            className="h-80 w-full"
             role="img"
-            aria-label="Bar chart of weekly learning time over the last twelve weeks"
+            aria-label="Monthly learning progress showing lessons, quizzes, assignments, attendance and notes"
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={weekly} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="progress-weekly-gradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={chart.bar} stopOpacity={0.95} />
-                    <stop offset="100%" stopColor={chart.bar} stopOpacity={0.45} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} stroke={chart.grid} />
+              <LineChart
+                data={progress}
+                margin={{
+                  top: 8,
+                  right: 16,
+                  left: 0,
+                  bottom: 0,
+                }}
+              >
+                <CartesianGrid
+                  vertical={false}
+                  stroke={chart.grid}
+                />
+
                 <XAxis
-                  dataKey="week_start"
-                  tickFormatter={(value: string) => format(parseISO(value), "MMM d")}
-                  tick={{ fill: chart.tick, fontSize: 11, fontFamily: monoFont }}
+                  dataKey="month"
+                  tickFormatter={(value: string) => {
+                    const date = parseISO(value);
+
+                    return format(date, "MMM");
+                  }}
+                  tick={{
+                    fill: chart.tick,
+                    fontSize: 11,
+                    fontFamily: monoFont,
+                  }}
                   tickLine={false}
                   axisLine={false}
                   tickMargin={10}
-                  minTickGap={16}
-                  interval="preserveStartEnd"
+                  minTickGap={20}
                 />
+
                 <YAxis
-                  width={40}
-                  tickFormatter={minutesTick}
-                  tick={{ fill: chart.tick, fontSize: 11, fontFamily: monoFont }}
+                  allowDecimals={false}
+                  tick={{
+                    fill: chart.tick,
+                    fontSize: 11,
+                    fontFamily: monoFont,
+                  }}
                   tickLine={false}
                   axisLine={false}
-                  allowDecimals={false}
+                  width={32}
                 />
+
                 <Tooltip
-                  content={<WeeklyTooltip />}
-                  cursor={{ fill: "rgba(18, 67, 137, 0.06)" }}
+                  content={<ProgressTooltip />}
+                  cursor={{
+                    stroke: chart.grid,
+                  }}
                 />
-                <Bar
-                  dataKey="minutes"
-                  name="Minutes"
-                  fill="url(#progress-weekly-gradient)"
-                  radius={[4, 4, 0, 0]}
-                  maxBarSize={36}
+
+                <Line
+                  type="monotone"
+                  dataKey="lessons"
+                  name="Lessons"
+                  stroke={chart.lessons}
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
                 />
-              </BarChart>
+
+                <Line
+                  type="monotone"
+                  dataKey="quizzes"
+                  name="Quizzes"
+                  stroke={chart.quizzes}
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+
+                <Line
+                  type="monotone"
+                  dataKey="assignments"
+                  name="Assignments"
+                  stroke={chart.assignments}
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+
+                <Line
+                  type="monotone"
+                  dataKey="attendance"
+                  name="Attendance"
+                  stroke={chart.attendance}
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+
+                <Line
+                  type="monotone"
+                  dataKey="notes"
+                  name="Notes"
+                  stroke={chart.notes}
+                  strokeWidth={2.5}
+                  dot={{ r: 3 }}
+                  activeDot={{ r: 5 }}
+                />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         )}
+
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-body-sm text-on-surface-variant">
+          <div className="flex items-center gap-2">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ backgroundColor: chart.lessons }}
+            />
+            Lessons
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ backgroundColor: chart.quizzes }}
+            />
+            Quizzes
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ backgroundColor: chart.assignments }}
+            />
+            Assignments
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ backgroundColor: chart.attendance }}
+            />
+            Attendance
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span
+              className="size-2.5 rounded-full"
+              style={{ backgroundColor: chart.notes }}
+            />
+            Notes
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

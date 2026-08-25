@@ -17,4 +17,6 @@ export {
   progressRepository,
   searchRepository,
   settingsRepository,
+   lessonActivityRepository,
+     notesRepository,
 } from "./engagement.repository";

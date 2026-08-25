@@ -4,6 +4,7 @@ export interface User {
   email: string;
   avatar_url: string | null;
   phone: string | null;
+  batch_no?: string | null;
   //bio: string | null;
   headline: string | null;
   /** Spatie role names, e.g. ["student"]. */

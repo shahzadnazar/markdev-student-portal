@@ -27,6 +27,7 @@ export const paths = {
   notifications: "/notifications",
   bookmarks: "/bookmarks",
   materials: "/materials",
+  notes: "/notes",
   search: "/search",
   calendar: "/calendar",
 

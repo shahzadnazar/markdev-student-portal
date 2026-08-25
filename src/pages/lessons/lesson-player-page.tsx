@@ -5,8 +5,16 @@ import { toast } from "sonner";
 import { ApiError } from "@/api/client";
 import { ErrorState } from "@/components/shared/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useCompleteLesson, useCourse, useCourseModules, useLesson } from "@/hooks/use-catalog";
-import { useToggleBookmark } from "@/hooks/use-engagement";
+import {
+  useCompleteLesson,
+  useCourse,
+  useCourseModules,
+  useLesson,
+} from "@/hooks/use-catalog";
+import {
+  useToggleBookmark,
+  useTrackLessonActivity,
+} from "@/hooks/use-engagement";
 import { CommentsSection } from "./comments-section";
 import { LessonContent, LessonMetaCard, ResourcesCard } from "./lesson-content";
 import { CurriculumDialog, CurriculumRail } from "./lesson-sidebar";
@@ -43,6 +51,7 @@ export default function LessonPlayerPage() {
   const modulesQuery = useCourseModules(courseId);
   const completeLesson = useCompleteLesson(courseId);
   const toggleBookmark = useToggleBookmark();
+  const trackLessonActivity = useTrackLessonActivity();
 
   const lesson = lessonQuery.data;
 
@@ -50,6 +59,17 @@ export default function LessonPlayerPage() {
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [lessonId]);
+
+  // Track lesson activity when the lesson loads.
+  useEffect(() => {
+    if (!lesson) return;
+
+    trackLessonActivity.mutate({
+      courseId,
+      lessonId,
+      minutes: Math.max(1, Math.round(lesson.duration_minutes)),
+    });
+  }, [lesson?.id, courseId, lessonId]);
 
   const handleToggleComplete = () => {
     if (!lesson) return;
@@ -59,7 +79,9 @@ export default function LessonPlayerPage() {
       {
         onSuccess: () => {
           toast.success(
-            next ? "Lesson marked as complete. Nice work!" : "Lesson marked as not complete.",
+            next
+              ? "Lesson marked as complete. Nice work!"
+              : "Lesson marked as not complete.",
           );
         },
         onError: (error) => {
@@ -80,7 +102,9 @@ export default function LessonPlayerPage() {
       { type: "lesson", id: lesson.id, bookmarked: next },
       {
         onSuccess: () => {
-          toast.success(next ? "Lesson saved to your bookmarks." : "Bookmark removed.");
+          toast.success(
+            next ? "Lesson saved to your bookmarks." : "Bookmark removed.",
+          );
         },
         onError: (error) => {
           toast.error(
@@ -149,7 +173,10 @@ export default function LessonPlayerPage() {
               />
             ) : lesson ? (
               <>
-                <motion.div {...sectionMotion} transition={{ duration: 0.4, ease: "easeOut" }}>
+                <motion.div
+                  {...sectionMotion}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                >
                   <LessonContent lesson={lesson} />
                 </motion.div>
 

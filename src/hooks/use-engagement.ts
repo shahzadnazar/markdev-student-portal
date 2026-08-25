@@ -14,7 +14,10 @@ import {
   progressRepository,
   searchRepository,
   settingsRepository,
+  lessonActivityRepository,
+   notesRepository,
 } from "@/api/repositories";
+
 import { qk } from "@/lib/query-keys";
 import type {
   ApplyLeavePayload,
@@ -23,6 +26,7 @@ import type {
   Leaderboard,
   ListParams,
   UserSettings,
+   
 } from "@/types";
 
 export function useDashboard() {
@@ -265,6 +269,47 @@ export function useUpdateSettings() {
     mutationFn: (payload: Partial<UserSettings>) => settingsRepository.update(payload),
     onSuccess: (settings) => {
       queryClient.setQueryData(qk.settings, settings);
+    },
+  });
+}
+export function useTrackLessonActivity() {
+  return useMutation({
+    mutationFn: ({
+      courseId,
+      lessonId,
+      minutes,
+    }: {
+      courseId: string | number;
+      lessonId: string | number;
+      minutes: number;
+    }) => lessonActivityRepository.track(courseId, lessonId, minutes),
+  });
+}
+export function useNotes() {
+  return useQuery({
+    queryKey: ["notes"],
+    queryFn: () => notesRepository.list(),
+  });
+}
+export function useMarkNoteRead() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (noteId: number) =>
+      notesRepository.markRead(noteId),
+
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: ["notes"],
+      });
+
+      void queryClient.invalidateQueries({
+        queryKey: qk.progress,
+      });
+
+      void queryClient.invalidateQueries({
+        queryKey: qk.dashboard,
+      });
     },
   });
 }

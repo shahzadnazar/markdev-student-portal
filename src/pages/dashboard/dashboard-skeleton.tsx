@@ -8,14 +8,15 @@ export function DashboardSkeleton() {
   return (
     <div role="status" className="space-y-8" aria-busy="true" aria-label="Loading dashboard">
       {/* Stat grid */}
-      <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-        <Skeleton className="h-28 rounded-2xl" />
-        <Skeleton className="h-28 rounded-2xl" />
-        <Skeleton className="h-28 rounded-2xl" />
-        <Skeleton className="h-28 rounded-2xl" />
-        <Skeleton className="col-span-2 h-28 rounded-2xl" />
-        <Skeleton className="col-span-2 h-28 rounded-2xl" />
-      </div>
+     <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+  <Skeleton className="h-28 rounded-2xl" />
+  <Skeleton className="h-28 rounded-2xl" />
+  <Skeleton className="h-28 rounded-2xl" />
+  <Skeleton className="h-28 rounded-2xl" />
+  <Skeleton className="h-28 rounded-2xl" />
+   <Skeleton className="h-28 rounded-2xl" />
+    <Skeleton className="h-28 rounded-2xl" />
+</div>
 
       {/* Continue learning */}
       <div>

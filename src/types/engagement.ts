@@ -80,6 +80,15 @@ export interface CourseProgress {
   completed_at: string | null;
 }
 
+export interface ProgressPoint {
+  month: string;
+  lessons: number;
+  quizzes: number;
+  assignments: number;
+  attendance: number;
+  notes: number;
+}
+
 export interface ProgressOverview {
   enrolled_courses: number;
   completed_courses: number;
@@ -88,11 +97,37 @@ export interface ProgressOverview {
   current_streak_days: number;
   longest_streak_days: number;
   points: number;
+
   /** Daily learning minutes for the trailing 12 weeks. */
   activity: { date: string; minutes: number }[];
+
+  /** Weekly learning progress by activity type. */
+  progress: ProgressPoint[];
+
   courses: CourseProgress[];
 }
+/* --------------------------------- Notes --------------------------------- */
 
+export interface Note {
+  id: number;
+  title: string;
+  description: string | null;
+  file_url: string | null;
+  file_type: string | null;
+  size_bytes: number;
+  uploaded_at: string | null;
+  is_read: boolean;
+
+  course: {
+    id: number;
+    title: string;
+  };
+
+  instructor?: {
+    id: number;
+    name: string;
+  };
+}
 /* ------------------------------- Leaderboard ------------------------------ */
 
 export interface LeaderboardEntry {
@@ -290,3 +325,4 @@ export interface ApplyLeavePayload {
   to_date: string;
   reason: string;
 }
+

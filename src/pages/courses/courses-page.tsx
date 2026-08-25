@@ -13,7 +13,7 @@ import {
   GraduationCap,
   Play,
   Search,
- // Settings,
+  // Settings,
   Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -33,7 +33,7 @@ import {
   initials,
 } from "@/lib/format";
 import { paths } from "@/routes/paths";
-import type { Course, LessonSummary } from "@/types";
+import type { LessonSummary } from "@/types";
 
 const sectionMotion = (delay: number) => ({
   initial: { opacity: 0, y: 12 },
@@ -245,12 +245,7 @@ export default function CoursesPage() {
                         size="lg"
                         className="w-full bg-white text-primary shadow-lg hover:bg-white/90 sm:w-auto"
                       >
-                        <Link
-                          to={paths.lesson(
-                            course.id,
-                            continueLesson.id,
-                          )}
-                        >
+                        <Link to={paths.lesson(course.id, continueLesson.id)}>
                           <Play />
                           Continue Learning
                         </Link>
@@ -285,10 +280,7 @@ export default function CoursesPage() {
           {/* CONTENT GRID */}
           <div className="grid w-full min-w-0 grid-cols-1 gap-5 overflow-hidden sm:gap-6 xl:grid-cols-12">
             {/* INSTRUCTOR */}
-            <motion.section
-              {...sectionMotion(0.1)}
-              className="xl:col-span-4"
-            >
+            <motion.section {...sectionMotion(0.1)} className="xl:col-span-4">
               <Card className="h-full rounded-2xl border-0 shadow-sm sm:rounded-3xl">
                 <CardContent className="p-5 sm:p-6">
                   <div className="mb-5 flex items-start justify-between gap-4">
@@ -488,9 +480,7 @@ export default function CoursesPage() {
                       <div className="mt-3 flex items-center gap-2 text-sm text-on-surface-variant">
                         <Clock className="size-4 shrink-0" />
 
-                        {formatDuration(
-                          continueLesson.duration_minutes,
-                        )}
+                        {formatDuration(continueLesson.duration_minutes)}
                       </div>
 
                       <Button
@@ -498,12 +488,7 @@ export default function CoursesPage() {
                         variant="secondary"
                         className="mt-6 w-full"
                       >
-                        <Link
-                          to={paths.lesson(
-                            course.id,
-                            continueLesson.id,
-                          )}
-                        >
+                        <Link to={paths.lesson(course.id, continueLesson.id)}>
                           <Play />
                           Start Lesson
                         </Link>
@@ -588,16 +573,10 @@ export default function CoursesPage() {
           </div>
 
           {/* TEST & ASSIGNMENT TABS */}
-          <motion.section
-            {...sectionMotion(0.35)}
-            className="w-full min-w-0"
-          >
+          <motion.section {...sectionMotion(0.35)} className="w-full min-w-0">
             <div className="grid w-full min-w-0 grid-cols-1 gap-5 overflow-hidden sm:grid-cols-2">
               {/* NEXT TEST */}
-              <Link
-                to={`/courses/${course.id}/tests`}
-                className="group min-w-0"
-              >
+              <Link to={paths.quizzes} className="group min-w-0">
                 <Card className="h-full rounded-2xl border-0 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl">
                   <CardContent className="p-5 sm:p-6">
                     <div className="flex items-start justify-between gap-4">
@@ -632,10 +611,7 @@ export default function CoursesPage() {
               </Link>
 
               {/* ASSIGNMENT */}
-              <Link
-                to={`/courses/${course.id}/assignments`}
-                className="group min-w-0"
-              >
+              <Link to={paths.assignments} className="group min-w-0">
                 <Card className="h-full rounded-2xl border-0 shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg sm:rounded-3xl">
                   <CardContent className="p-5 sm:p-6">
                     <div className="flex items-start justify-between gap-4">
@@ -680,13 +656,7 @@ export default function CoursesPage() {
 /* Small Components                                                           */
 /* -------------------------------------------------------------------------- */
 
-function HeroStat({
-  label,
-  value,
-}: {
-  label: string;
-  value: string;
-}) {
+function HeroStat({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
       <p className="font-mono text-[9px] uppercase tracking-wider text-white/55 sm:text-label-sm">
@@ -700,22 +670,14 @@ function HeroStat({
   );
 }
 
-function CourseStat({
-  value,
-  label,
-}: {
-  value: string;
-  label: string;
-}) {
+function CourseStat({ value, label }: { value: string; label: string }) {
   return (
     <div>
       <p className="font-display text-2xl font-semibold text-on-surface">
         {value}
       </p>
 
-      <p className="mt-0.5 text-sm text-on-surface-variant">
-        {label}
-      </p>
+      <p className="mt-0.5 text-sm text-on-surface-variant">{label}</p>
     </div>
   );
 }
@@ -732,17 +694,12 @@ function ProgressCircle({
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
   const safeValue = Math.min(Math.max(value, 0), 100);
-  const offset =
-    circumference - (circumference * safeValue) / 100;
+  const offset = circumference - (circumference * safeValue) / 100;
 
   return (
     <div className="flex w-full max-w-[260px] flex-col items-center rounded-2xl border border-white/15 bg-white/10 p-5 backdrop-blur-xl sm:rounded-3xl sm:p-7">
       <div className="relative size-36 sm:size-40">
-        <svg
-          className="-rotate-90"
-          viewBox="0 0 128 128"
-          aria-hidden="true"
-        >
+        <svg className="-rotate-90" viewBox="0 0 128 128" aria-hidden="true">
           <circle
             cx="64"
             cy="64"
@@ -869,9 +826,7 @@ function weekDays() {
   return Array.from({ length: 5 }, (_, index) => {
     const date = new Date(now);
 
-    date.setDate(
-      now.getDate() - now.getDay() + 1 + index,
-    );
+    date.setDate(now.getDate() - now.getDay() + 1 + index);
 
     return {
       key: date.toISOString(),

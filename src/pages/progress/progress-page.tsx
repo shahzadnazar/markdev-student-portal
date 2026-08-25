@@ -15,7 +15,7 @@ import { useProgress } from "@/hooks/use-engagement";
 import { formatCompact, formatDuration } from "@/lib/format";
 import type { ProgressOverview } from "@/types";
 import { CourseProgressGroups } from "./course-progress-groups";
-import { ProgressActivityCard } from "./progress-activity-card";
+import { ProgressProgressCard } from "./progress-activity-card";
 
 function ProgressStats({ overview }: { overview: ProgressOverview }) {
   const inProgressCount = Math.max(
@@ -124,7 +124,7 @@ function ProgressContent({ overview }: { overview: ProgressOverview }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
       >
-        <ProgressActivityCard activity={overview.activity} />
+        <ProgressProgressCard progress={overview.progress} />
       </motion.div>
 
       <motion.div

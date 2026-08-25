@@ -1,6 +1,17 @@
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { Award, CalendarCheck, ClipboardList, Clock, Flame, GraduationCap, Trophy, Plane } from "lucide-react";
+import {
+  CalendarCheck,
+  ClipboardList,
+  Clock,
+  Flame,
+  GraduationCap,
+  Trophy,
+  Plane,
+  FileQuestion,
+  NotebookPen,
+} from "lucide-react";
+import { Link } from "react-router-dom";
 import { ErrorState } from "@/components/shared/error-state";
 import { StatCard } from "@/components/shared/stat-card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,6 +25,7 @@ import { AnnouncementsCard } from "./announcements-card";
 import { ContinueLearningSection } from "./continue-learning-section";
 import { DashboardSkeleton } from "./dashboard-skeleton";
 import { UpcomingCard } from "./upcoming-card";
+import { paths } from "@/routes/paths";
 
 function greetingForHour(hour: number): string {
   if (hour < 12) return "Good morning";
@@ -72,55 +84,173 @@ function GreetingHeader({ name, streakDays, isLoading }: GreetingHeaderProps) {
   );
 }
 
+// function StatsGrid({ stats }: { stats: DashboardData["stats"] }) {
+//   const pendingQuizzesHint =
+//     stats.pending_quizzes > 0
+//       ? `Plus ${stats.pending_quizzes} pending ${stats.pending_quizzes === 1 ? "quiz" : "quizzes"}`
+//       : "You're all caught up";
+
+//   return (
+//     <section aria-label="Your learning stats" className="grid grid-cols-2 gap-4 xl:grid-cols-4">
+//       <StatCard
+//         label="Enrolled courses"
+//         value={stats.enrolled_courses}
+//         icon={GraduationCap}
+//         hint={`${stats.completed_courses} completed`}
+//       />
+//       <StatCard
+//         label="Hours learned"
+//         value={formatCompact(stats.hours_learned)}
+//         icon={Clock}
+//         hint={`${formatCompact(stats.completed_lessons)} lessons completed`}
+//       />
+//       <StatCard
+//         label="Pending assignments"
+//         value={stats.pending_assignments}
+//         icon={ClipboardList}
+//         tone={stats.pending_assignments > 0 ? "warning" : "primary"}
+//         hint={pendingQuizzesHint}
+//       />
+//       <StatCard
+//         label="Certificates"
+//         value={stats.certificates_earned}
+//         icon={Award}
+//         tone="secondary"
+//         hint="Earned to date"
+//       />
+//       <StatCard
+//         className="col-span-2"
+//         label="Attendance rate"
+//         value={formatPercent(stats.attendance_rate)}
+//         icon={CalendarCheck}
+//         tone={stats.attendance_rate >= 75 ? "success" : "warning"}
+//         hint="Across your live sessions"
+//       />
+//       <StatCard
+//         className="col-span-2"
+//         label="Points"
+//         value={formatCompact(stats.points)}
+//         icon={Trophy}
+//         hint="Collect points to climb the leaderboard"
+//       />
+//     </section>
+//   );
+// }
 function StatsGrid({ stats }: { stats: DashboardData["stats"] }) {
   const pendingQuizzesHint =
     stats.pending_quizzes > 0
-      ? `Plus ${stats.pending_quizzes} pending ${stats.pending_quizzes === 1 ? "quiz" : "quizzes"}`
+      ? `${stats.pending_quizzes} pending ${
+          stats.pending_quizzes === 1 ? "quiz" : "quizzes"
+        }`
       : "You're all caught up";
 
   return (
-    <section aria-label="Your learning stats" className="grid grid-cols-2 gap-4 xl:grid-cols-4">
-      <StatCard
-        label="Enrolled courses"
-        value={stats.enrolled_courses}
-        icon={GraduationCap}
-        hint={`${stats.completed_courses} completed`}
-      />
-      <StatCard
-        label="Hours learned"
-        value={formatCompact(stats.hours_learned)}
-        icon={Clock}
-        hint={`${formatCompact(stats.completed_lessons)} lessons completed`}
-      />
-      <StatCard
-        label="Pending assignments"
-        value={stats.pending_assignments}
-        icon={ClipboardList}
-        tone={stats.pending_assignments > 0 ? "warning" : "primary"}
-        hint={pendingQuizzesHint}
-      />
-      <StatCard
-        label="Certificates"
-        value={stats.certificates_earned}
-        icon={Award}
-        tone="secondary"
-        hint="Earned to date"
-      />
-      <StatCard
-        className="col-span-2"
-        label="Attendance rate"
-        value={formatPercent(stats.attendance_rate)}
-        icon={CalendarCheck}
-        tone={stats.attendance_rate >= 75 ? "success" : "warning"}
-        hint="Across your live sessions"
-      />
-      <StatCard
-        className="col-span-2"
-        label="Points"
-        value={formatCompact(stats.points)}
-        icon={Trophy}
-        hint="Collect points to climb the leaderboard"
-      />
+    <section
+      aria-label="Your learning stats"
+      className="grid grid-cols-2 gap-4 xl:grid-cols-4"
+    >
+      <Link
+        to={paths.courses}
+        className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      >
+        <StatCard
+          label="Enrolled courses"
+          value={stats.enrolled_courses}
+          icon={GraduationCap}
+          hint={`${stats.completed_courses} completed`}
+          className="h-full transition-transform duration-200 hover:-translate-y-0.5"
+        />
+      </Link>
+
+      <Link
+        to={paths.progress}
+        className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      >
+        <StatCard
+          label="Hours learned"
+          value={formatCompact(stats.hours_learned)}
+          icon={Clock}
+          hint={`${formatCompact(stats.completed_lessons)} lessons completed`}
+          className="h-full transition-transform duration-200 hover:-translate-y-0.5"
+        />
+      </Link>
+
+      <Link
+        to={paths.assignments}
+        className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      >
+        <StatCard
+          label="Pending assignments"
+          value={stats.pending_assignments}
+          icon={ClipboardList}
+          tone={stats.pending_assignments > 0 ? "warning" : "primary"}
+          hint={
+            stats.pending_assignments > 0
+              ? `${stats.pending_assignments} ${
+                  stats.pending_assignments === 1
+                    ? "assignment"
+                    : "assignments"
+                } to complete`
+              : "You're all caught up"
+          }
+          className="h-full transition-transform duration-200 hover:-translate-y-0.5"
+        />
+      </Link>
+
+      <Link
+        to={paths.quizzes}
+        className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      >
+        <StatCard
+          label="Quizzes"
+          value={stats.pending_quizzes}
+          icon={FileQuestion}
+          tone={stats.pending_quizzes > 0 ? "secondary" : "primary"}
+          hint={pendingQuizzesHint}
+          className="h-full transition-transform duration-200 hover:-translate-y-0.5"
+        />
+      </Link>
+
+      <Link
+        to={paths.notes}
+        className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      >
+        <StatCard
+          label="My notes"
+          value="View"
+          icon={NotebookPen}
+          tone="secondary"
+          hint="Open your saved notes"
+          className="h-full transition-transform duration-200 hover:-translate-y-0.5"
+        />
+      </Link>
+
+      <Link
+        to={paths.attendance}
+        className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      >
+        <StatCard
+          label="Attendance rate"
+          value={formatPercent(stats.attendance_rate)}
+          icon={CalendarCheck}
+          tone={stats.attendance_rate >= 75 ? "success" : "warning"}
+          hint="Across your live sessions"
+          className="h-full transition-transform duration-200 hover:-translate-y-0.5"
+        />
+      </Link>
+
+      <Link
+        to={paths.leaderboard}
+        className="block rounded-2xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      >
+        <StatCard
+          label="Points"
+          value={formatCompact(stats.points)}
+          icon={Trophy}
+          hint="Collect points"
+          className="h-full transition-transform duration-200 hover:-translate-y-0.5"
+        />
+      </Link>
     </section>
   );
 }
