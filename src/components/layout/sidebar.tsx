@@ -16,7 +16,6 @@ import {
   Settings,
   Trophy,
   UserRound,
-  FolderOpen,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { paths } from "@/routes/paths";
@@ -53,7 +52,6 @@ const sections: NavSection[] = [
     title: "Learning",
     items: [
       { label: "Assignments", to: paths.assignments, icon: ClipboardList },
-      { label: "Study materials", to: paths.materials, icon: FolderOpen },
       { label: "Quizzes", to: paths.quizzes, icon: FileQuestion },
       {
         label: "Notes",

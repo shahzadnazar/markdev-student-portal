@@ -1,7 +1,11 @@
-import { BookOpen, Clock, Star, Users } from "lucide-react";
+import { Bookmark, BookOpen, Clock, Star, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
+import { ApiError } from "@/api/client";
+import { useToggleBookmark } from "@/hooks/use-engagement";
 import { formatCompact, formatDuration } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import { paths } from "@/routes/paths";
 import type { Course } from "@/types";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +19,34 @@ const levelLabels: Record<Course["level"], string> = {
 };
 
 export function CourseCard({ course }: { course: Course }) {
+  const toggleBookmark = useToggleBookmark();
+
+  const handleToggleBookmark = () => {
+    const next = !course.is_bookmarked;
+    toggleBookmark.mutate(
+      { type: "course", id: course.id, bookmarked: next },
+      {
+        onSuccess: () => {
+          toast.success(next ? "Course saved to your bookmarks." : "Bookmark removed.");
+        },
+        onError: (error) => {
+          toast.error(
+            error instanceof ApiError
+              ? error.message
+              : "Couldn't update the bookmark. Please try again.",
+          );
+        },
+      },
+    );
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
       whileHover={{ y: -3 }}
-      className="h-full"
+      className="relative h-full"
     >
       <Link
         to={paths.course(course.id)}
@@ -104,6 +129,33 @@ export function CourseCard({ course }: { course: Course }) {
           </div>
         </Card>
       </Link>
+
+      {/*
+        Sibling of the <Link>, not a child — a <button> nested inside an <a> is
+        invalid HTML and confuses screen readers and keyboard navigation.
+      */}
+      <button
+        type="button"
+        onClick={handleToggleBookmark}
+        disabled={toggleBookmark.isPending}
+        aria-pressed={course.is_bookmarked}
+        aria-label={
+          course.is_bookmarked
+            ? `Remove ${course.title} from bookmarks`
+            : `Save ${course.title} to bookmarks`
+        }
+        className={cn(
+          "absolute top-3 right-3 z-10 flex size-9 items-center justify-center rounded-full",
+          "bg-black/35 text-white backdrop-blur-sm transition-all duration-150",
+          "hover:bg-black/55 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none",
+          "disabled:pointer-events-none disabled:opacity-60",
+        )}
+      >
+        <Bookmark
+          className={cn("size-4", course.is_bookmarked && "fill-current")}
+          aria-hidden="true"
+        />
+      </button>
     </motion.div>
   );
 }

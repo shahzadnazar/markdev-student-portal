@@ -215,6 +215,7 @@ function AssignmentRow({ assignment }: { assignment: Assignment }) {
   const { icon: StatusIcon, tile, label } = statusConfig[assignment.status];
   const isOverdue = assignment.status === "overdue";
   const score = assignment.status === "graded" ? assignment.submission?.score : null;
+  const feedback = assignment.status === "graded" ? assignment.submission?.feedback : null;
 
   return (
     <Link
@@ -251,12 +252,22 @@ function AssignmentRow({ assignment }: { assignment: Assignment }) {
         </p>
       </div>
 
-      {/* Score + affordance */}
+      {/* Score + feedback + affordance */}
       <div className="flex shrink-0 items-center gap-3">
         {score != null ? (
-          <span className="font-mono text-label-md text-on-surface">
-            {score} / {assignment.max_score}
-          </span>
+          <div className="max-w-40 text-right sm:max-w-64">
+            <span className="font-mono text-label-md text-on-surface">
+              {score} / {assignment.max_score}
+            </span>
+            {feedback ? (
+              <p
+                className="mt-1 line-clamp-2 text-label-sm text-on-surface-variant italic"
+                title={feedback}
+              >
+                {feedback}
+              </p>
+            ) : null}
+          </div>
         ) : null}
         <ChevronRight
           className="size-5 text-outline transition-all duration-150 group-hover:translate-x-0.5 group-hover:text-primary"

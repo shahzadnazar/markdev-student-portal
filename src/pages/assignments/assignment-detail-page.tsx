@@ -268,15 +268,14 @@ function BriefCard({ assignment }: { assignment: Assignment }) {
 
 /* ---------------------------- Submission (form) --------------------------- */
 
-const submissionSchema = z
-  .object({
-    content: z.string(),
-    file: z.instanceof(File, { message: "Attach a valid file." }).nullable(),
-  })
-  .refine((values) => values.content.trim().length > 0 || values.file !== null, {
-    message: "Write a response or attach a file — at least one is required.",
-    path: ["content"],
-  });
+const submissionSchema = z.object({
+  /** Optional question for the instructor — sent alongside the submitted file. */
+  query: z.string(),
+  file: z
+    .instanceof(File, { message: "Attach a valid file." })
+    .nullable()
+    .refine((file) => file !== null, { message: "Attach your work to submit." }),
+});
 
 type SubmissionFormValues = z.infer<typeof submissionSchema>;
 
@@ -301,7 +300,7 @@ function SubmissionFormCard({
     formState: { errors, isSubmitted },
   } = useForm<SubmissionFormValues>({
     resolver: zodResolver(submissionSchema),
-    defaultValues: { content: assignment.submission?.content ?? "", file: null },
+    defaultValues: { query: assignment.submission?.query ?? "", file: null },
   });
 
   const file = watch("file");
@@ -317,9 +316,9 @@ function SubmissionFormCard({
   };
 
   const onSubmit = handleSubmit((values) => {
-    const content = values.content.trim();
+    const query = values.query.trim();
     mutation.mutate(
-      { content: content || undefined, file: values.file ?? undefined },
+      { query: query || undefined, file: values.file ?? undefined },
       {
         onSuccess: () => {
           toast.success(
@@ -335,9 +334,9 @@ function SubmissionFormCard({
         onError: (error) => {
           if (error instanceof ApiError) {
             if (error.status === 422) {
-              const contentMessage = error.errors.content?.[0];
+              const queryMessage = error.errors.query?.[0];
               const fileMessage = error.errors.file?.[0];
-              if (contentMessage) setError("content", { message: contentMessage });
+              if (queryMessage) setError("query", { message: queryMessage });
               if (fileMessage) setError("file", { message: fileMessage });
             }
             setError("root", { message: error.message });
@@ -361,7 +360,7 @@ function SubmissionFormCard({
         <CardDescription>
           {isResubmission
             ? "Apply your instructor's feedback, then send it back for grading."
-            : "Write a response, attach a file, or both."}
+            : "Attach your work, and add a query if you need to ask your instructor something."}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -369,18 +368,18 @@ function SubmissionFormCard({
           <FormError message={errors.root?.message} />
 
           <FormField
-            label="Response"
-            htmlFor="content"
-            error={errors.content?.message}
-            hint="Optional if you attach a file."
+            label="Query"
+            htmlFor="query"
+            error={errors.query?.message}
+            hint="Optional — ask your instructor anything about this assignment."
           >
             <Textarea
-              id="content"
+              id="query"
               rows={6}
-              placeholder="Type your answer, notes, or a link to your work…"
-              aria-invalid={errors.content ? true : undefined}
-              aria-describedby={errors.content ? "content-error" : undefined}
-              {...register("content")}
+              placeholder="Have a question about this assignment? Ask your instructor here…"
+              aria-invalid={errors.query ? true : undefined}
+              aria-describedby={errors.query ? "query-error" : undefined}
+              {...register("query")}
             />
           </FormField>
 
@@ -388,7 +387,7 @@ function SubmissionFormCard({
             label="Attachment"
             htmlFor="file"
             error={errors.file?.message}
-            hint="One file, optional if you've written a response."
+            hint="One file — this is the work your instructor will grade."
           >
             <input
               ref={fileInputRef}
@@ -492,11 +491,11 @@ function SubmissionSummaryCard({ assignment }: { assignment: Assignment }) {
         <CardDescription>Submitted {formatDateTime(submission.submitted_at)}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
-        {submission.content ? (
+        {submission.query ? (
           <div>
-            <h3 className="font-mono text-label-sm text-on-surface-variant uppercase">Response</h3>
+            <h3 className="font-mono text-label-sm text-on-surface-variant uppercase">Query</h3>
             <p className="mt-2 rounded-xl bg-surface-container-low p-4 text-body-sm whitespace-pre-wrap text-on-surface">
-              {submission.content}
+              {submission.query}
             </p>
           </div>
         ) : null}
@@ -525,9 +524,9 @@ function SubmissionSummaryCard({ assignment }: { assignment: Assignment }) {
           </div>
         ) : null}
 
-        {!submission.content && !submission.file_url ? (
+        {!submission.query && !submission.file_url ? (
           <p className="text-body-sm text-on-surface-variant">
-            No written response or file was attached to this submission.
+            No file or query was attached to this submission.
           </p>
         ) : null}
 

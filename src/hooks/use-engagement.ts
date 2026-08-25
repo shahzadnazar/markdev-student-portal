@@ -4,7 +4,6 @@ import {
   attendanceRepository,
   bookmarksRepository,
   leavesRepository,
-  materialsRepository,
   calendarRepository,
   certificatesRepository,
   dashboardRepository,
@@ -153,24 +152,6 @@ export function useApplyForLeave() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: qk.leaves });
       void queryClient.invalidateQueries({ queryKey: qk.dashboard });
-    },
-  });
-}
-
-/* ---------------------------- Study materials ----------------------------- */
-
-export function useMaterials() {
-  return useQuery({ queryKey: qk.materials, queryFn: () => materialsRepository.list() });
-}
-
-export function useMarkMaterialRead() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (materialId: number) => materialsRepository.markRead(materialId),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: qk.materials });
-      void queryClient.invalidateQueries({ queryKey: qk.dashboard });
-      void queryClient.invalidateQueries({ queryKey: qk.progress });
     },
   });
 }

@@ -23,7 +23,7 @@ export const assignmentsRepository = {
 
   submit(assignmentId: number | string, payload: SubmitAssignmentPayload) {
     const form = new FormData();
-    if (payload.content) form.append("content", payload.content);
+    if (payload.query) form.append("query", payload.query);
     if (payload.file) form.append("file", payload.file);
     return post<AssignmentSubmission>(`/assignments/${assignmentId}/submissions`, form, {
       headers: { "Content-Type": "multipart/form-data" },

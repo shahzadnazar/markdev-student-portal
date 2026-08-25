@@ -31,7 +31,10 @@ export interface Assignment {
 export interface AssignmentSubmission {
   id: number;
   assignment_id: number;
+  /** Legacy submission body — kept so older submissions still render. */
   content: string | null;
+  /** Student's question to the instructor about this assignment. */
+  query: string | null;
   file_url: string | null;
   file_name: string | null;
   submitted_at: string;
@@ -47,7 +50,8 @@ export interface AssignmentListParams extends ListParams {
 }
 
 export interface SubmitAssignmentPayload {
-  content?: string;
+  /** Student's question to the instructor — optional. */
+  query?: string;
   /** Uploaded via multipart when present. */
   file?: File | null;
 }

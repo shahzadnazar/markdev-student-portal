@@ -289,21 +289,6 @@ export interface SearchResults {
   announcements: { id: number; title: string; published_at: string }[];
 }
 
-/* ---------------------------- Study materials ----------------------------- */
-
-/** A lesson file surfaced in the Study Materials screen. */
-export interface Material {
-  id: number;
-  name: string;
-  file_url: string | null;
-  file_type: string | null;
-  size_bytes: number;
-  uploaded_at: string | null;
-  is_read: boolean;
-  lesson: { id: number | null; title: string | null; type: string | null };
-  course: { id: number | null; title: string | null };
-}
-
 /* ---------------------------- Leave applications --------------------------- */
 
 export type LeaveStatus = "pending" | "approved" | "rejected";

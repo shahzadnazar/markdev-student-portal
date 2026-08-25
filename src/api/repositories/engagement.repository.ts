@@ -8,7 +8,6 @@ import type {
   Bookmark,
   ApplyLeavePayload,
   LeaveApplication,
-  Material,
   BookmarkableType,
   CalendarEvent,
   Certificate,
@@ -125,16 +124,6 @@ export const leavesRepository = {
 
   apply(payload: ApplyLeavePayload) {
     return post<LeaveApplication>("/leaves", payload);
-  },
-};
-
-export const materialsRepository = {
-  list() {
-    return get<Material[]>("/materials");
-  },
-
-  markRead(materialId: number) {
-    return post<{ id: number; is_read: boolean; read_at: string }>(`/materials/${materialId}/read`);
   },
 };
 
