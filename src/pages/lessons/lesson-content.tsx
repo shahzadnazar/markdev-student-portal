@@ -17,6 +17,7 @@ import { formatBytes, formatClock, formatDuration } from "@/lib/format";
 import { paths } from "@/routes/paths";
 import type { Lesson, Resource } from "@/types";
 import { VideoPlayer } from "./video-player";
+import type { PlaybackSample } from "./video-player";
 
 /** Styled wrapper for rich-text HTML coming from the API. */
 const richTextClass =
@@ -61,7 +62,15 @@ function ActivityCtaCard({
 }
 
 /** The primary lesson body, switched on `lesson.type`. */
-export function LessonContent({ lesson }: { lesson: Lesson }) {
+export function LessonContent({
+  lesson,
+  onSample,
+  onPause,
+}: {
+  lesson: Lesson;
+  onSample?: (sample: PlaybackSample) => void;
+  onPause?: () => void;
+}) {
   switch (lesson.type) {
     case "video":
       if (!lesson.video) {
@@ -73,7 +82,14 @@ export function LessonContent({ lesson }: { lesson: Lesson }) {
           />
         );
       }
-      return <VideoPlayer video={lesson.video} title={lesson.title} />;
+      return (
+        <VideoPlayer
+          video={lesson.video}
+          title={lesson.title}
+          onSample={onSample}
+          onPause={onPause}
+        />
+      );
 
     case "article":
       if (!lesson.content) {

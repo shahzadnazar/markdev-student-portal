@@ -16,6 +16,8 @@ interface LessonTopbarProps {
   courseTitleLoading: boolean;
   courseTitleError: boolean;
   onToggleComplete: () => void;
+  /** Set when the lesson can't be completed yet; also used as the tooltip. */
+  completeBlockedReason?: string | null;
   completePending: boolean;
   onToggleBookmark: () => void;
   bookmarkPending: boolean;
@@ -34,6 +36,7 @@ export function LessonTopbar({
   courseTitleLoading,
   courseTitleError,
   onToggleComplete,
+  completeBlockedReason,
   completePending,
   onToggleBookmark,
   bookmarkPending,
@@ -97,7 +100,8 @@ export function LessonTopbar({
             variant="secondary"
             size="sm"
             onClick={onToggleComplete}
-            disabled={!lesson || completePending}
+            title={completeBlockedReason ?? undefined}
+            disabled={!lesson || completePending || Boolean(completeBlockedReason)}
             aria-pressed={isCompleted}
             className={cn(
               isCompleted &&

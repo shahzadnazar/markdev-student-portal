@@ -19,6 +19,7 @@ import { CommentsSection } from "./comments-section";
 import { LessonContent, LessonMetaCard, ResourcesCard } from "./lesson-content";
 import { CurriculumDialog, CurriculumRail } from "./lesson-sidebar";
 import { LessonTopbar } from "./lesson-topbar";
+import { useVideoProgress } from "@/hooks/use-video-progress";
 import { paths } from "@/routes/paths";
 
 const sectionMotion = {
@@ -54,6 +55,26 @@ export default function LessonPlayerPage() {
   const trackLessonActivity = useTrackLessonActivity();
 
   const lesson = lessonQuery.data;
+
+  const isVideoLesson = lesson?.type === "video" && Boolean(lesson?.video);
+
+  const {
+    progress: watch,
+    onSample,
+    onPause,
+  } = useVideoProgress({
+    courseId,
+    lessonId,
+    initial: lesson?.video_progress ?? null,
+    enabled: isVideoLesson,
+  });
+
+  // A video lesson only counts once enough of it has genuinely been played;
+  // seeking past a section never contributes, so the scrubber can't fake it.
+  const completeBlockedReason =
+    isVideoLesson && !lesson?.is_completed && watch && !watch.can_complete
+      ? `Watch at least ${watch.required_percent}% of the video to complete this lesson — you're at ${watch.coverage_percent}%.`
+      : null;
 
   // Land at the top of the new lesson when navigating prev/next or via the rail.
   useEffect(() => {
@@ -140,6 +161,7 @@ export default function LessonPlayerPage() {
         courseTitleLoading={courseQuery.isPending}
         courseTitleError={courseQuery.isError}
         onToggleComplete={handleToggleComplete}
+        completeBlockedReason={completeBlockedReason}
         completePending={completeLesson.isPending}
         onToggleBookmark={handleToggleBookmark}
         bookmarkPending={toggleBookmark.isPending}
@@ -177,7 +199,7 @@ export default function LessonPlayerPage() {
                   {...sectionMotion}
                   transition={{ duration: 0.4, ease: "easeOut" }}
                 >
-                  <LessonContent lesson={lesson} />
+                  <LessonContent lesson={lesson} onSample={onSample} onPause={onPause} />
                 </motion.div>
 
                 <motion.div

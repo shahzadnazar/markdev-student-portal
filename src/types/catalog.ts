@@ -92,6 +92,8 @@ export interface Lesson extends LessonSummary {
   /** Rich-text/HTML body for article lessons. */
   content: string | null;
   video: Video | null;
+  /** Present for video lessons — how much this student has watched. */
+  video_progress?: VideoProgress | null;
   resources: Resource[];
   /** Ids for the linked activity when type is quiz/assignment. */
   quiz_id: number | null;
@@ -99,6 +101,18 @@ export interface Lesson extends LessonSummary {
   previous_lesson_id: number | null;
   next_lesson_id: number | null;
   is_bookmarked: boolean;
+}
+
+/** How much of a lesson video the student has actually played. */
+export interface VideoProgress {
+  watched_seconds: number;
+  duration_seconds: number;
+  /** Furthest point reached, seeking included. */
+  furthest_seconds: number;
+  coverage_percent: number;
+  /** Coverage needed before the lesson can be completed. */
+  required_percent: number;
+  can_complete: boolean;
 }
 
 export interface Video {

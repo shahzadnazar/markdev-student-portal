@@ -8,6 +8,7 @@ import type {
   Lesson,
   Module,
   Paginated,
+  VideoProgress,
 } from "@/types";
 
 export const coursesRepository = {
@@ -43,6 +44,18 @@ export const lessonsRepository = {
 
   uncomplete(courseId: number | string, lessonId: number | string) {
     return destroy<{ progress_percent: number }>(`/courses/${courseId}/lessons/${lessonId}/complete`);
+  },
+
+  /** Report the ranges of the lesson video that were played. */
+  videoProgress(
+    courseId: number | string,
+    lessonId: number | string,
+    payload: { duration: number; position: number; segments: [number, number][] },
+  ) {
+    return post<VideoProgress>(
+      `/courses/${courseId}/lessons/${lessonId}/video-progress`,
+      payload,
+    );
   },
 
   comments(lessonId: number | string) {
