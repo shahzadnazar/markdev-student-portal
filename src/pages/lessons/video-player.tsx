@@ -1,5 +1,6 @@
 import { ExternalLink, PlayCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { embedUrlFor } from "@/lib/video";
 import type { Video } from "@/types";
 
 interface VideoPlayerProps {
@@ -39,11 +40,14 @@ export function VideoPlayer({ video, title }: VideoPlayerProps) {
   }
 
   /*
-    Only an embed URL can be framed — YouTube and Vimeo send X-Frame-Options on
-    their watch pages, so framing `url` renders a blank box with no explanation.
-    Offer the video on its own site instead.
+    Derive the embed URL when the API doesn't supply one, so a lesson saved with
+    only a watch URL still plays. Only when even that fails is the video truly
+    unframeable — YouTube and Vimeo send X-Frame-Options on their watch pages,
+    so framing `url` would render a blank box with no explanation.
   */
-  if (!video.embed_url) {
+  const embedUrl = embedUrlFor(video);
+
+  if (!embedUrl) {
     return (
       <Frame className="flex flex-col items-center justify-center gap-4 p-6 text-center">
         <PlayCircle className="size-12 text-white/70" aria-hidden="true" />
@@ -70,7 +74,7 @@ export function VideoPlayer({ video, title }: VideoPlayerProps) {
   return (
     <Frame>
       <iframe
-        src={video.embed_url}
+        src={embedUrl}
         title={title}
         allowFullScreen
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
