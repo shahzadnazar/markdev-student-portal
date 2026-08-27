@@ -17,6 +17,7 @@ import {
   Trophy,
   UserRound,
 } from "lucide-react";
+import { PanelLeftClose } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { paths } from "@/routes/paths";
 import { cn } from "@/lib/utils";
@@ -86,25 +87,49 @@ interface SidebarProps {
   /** Called after a nav item is chosen (used to close the mobile drawer). */
   onNavigate?: () => void;
   className?: string;
+  /** Narrow to icons only. Desktop shell state; the drawer never collapses. */
+  collapsed?: boolean;
+  /** Omitted for the drawer, which has no collapse control. */
+  onToggleCollapse?: () => void;
 }
 
-export function Sidebar({ onNavigate, className }: SidebarProps) {
+export function Sidebar({ onNavigate, className, collapsed = false, onToggleCollapse }: SidebarProps) {
   return (
     <aside
       className={cn(
-        // Pure white, 280px, architectural 1px light-blue right border (per design doc).
-        "flex h-full w-sidebar flex-col border-r border-primary/10 bg-white",
+        // Pure white, architectural 1px light-blue right border (per design doc).
+        "flex h-full flex-col border-r border-primary/10 bg-white transition-[width] duration-200",
+        collapsed ? "w-[76px]" : "w-sidebar",
         className,
       )}
     >
-      <div className="flex h-16 shrink-0 items-center px-6">
-        <NavLink
-          to={paths.dashboard}
-          onClick={onNavigate}
-          aria-label="MarkDev dashboard"
-        >
-          <BrandWordmark />
-        </NavLink>
+      <div className={cn("flex h-16 shrink-0 items-center", collapsed ? "justify-center px-2" : "px-6")}>
+        {collapsed ? null : (
+          <NavLink to={paths.dashboard} onClick={onNavigate} aria-label="MarkDev dashboard">
+            <BrandWordmark />
+          </NavLink>
+        )}
+
+        {/* Sits on the panel it controls. Desktop only — the mobile drawer
+            slides away instead of collapsing. */}
+        {onToggleCollapse ? (
+          <button
+            type="button"
+            onClick={onToggleCollapse}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={cn(
+              "shrink-0 rounded-lg p-2 text-outline transition hover:bg-surface-ice hover:text-primary",
+              collapsed ? "" : "ml-auto",
+            )}
+          >
+            <PanelLeftClose
+              className={cn("size-[18px] transition-transform duration-200", collapsed && "rotate-180")}
+              aria-hidden="true"
+            />
+          </button>
+        ) : null}
       </div>
 
       <nav
@@ -113,9 +138,13 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
       >
         {sections.map((section) => (
           <div key={section.title} className="mb-6">
-            <p className="mb-1.5 px-3 font-mono text-label-sm text-outline uppercase">
-              {section.title}
-            </p>
+            {collapsed ? (
+              <div className="mx-3 mb-1.5 h-px bg-outline-variant/50" aria-hidden="true" />
+            ) : (
+              <p className="mb-1.5 px-3 font-mono text-label-sm text-outline uppercase">
+                {section.title}
+              </p>
+            )}
             <ul className="space-y-0.5">
               {section.items.map((item) => (
                 <li key={item.to}>
@@ -123,9 +152,11 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
                     to={item.to}
                     end={item.end}
                     onClick={onNavigate}
+                    title={collapsed ? item.label : undefined}
                     className={({ isActive }) =>
                       cn(
                         "group relative flex items-center gap-3 rounded-lg px-3 py-2 text-body-sm font-medium transition-colors duration-150",
+                        collapsed && "justify-center",
                         isActive
                           ? "bg-primary/[0.06] text-primary"
                           : "text-on-surface-variant hover:bg-surface-ice hover:text-on-surface",
@@ -151,7 +182,11 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
                           )}
                           aria-hidden="true"
                         />
-                        {item.label}
+                        {collapsed ? (
+                          <span className="sr-only">{item.label}</span>
+                        ) : (
+                          item.label
+                        )}
                       </>
                     )}
                   </NavLink>

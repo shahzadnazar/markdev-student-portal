@@ -1,6 +1,7 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { AnnouncementPopup } from "@/components/announcements/announcement-popup";
 import { useLiveAnnouncements } from "@/hooks/use-engagement";
 import { Sidebar } from "./sidebar";
@@ -12,6 +13,22 @@ import { Topbar } from "./topbar";
  */
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
+  // Remembered per browser so the choice survives a reload.
+  const [collapsed, setCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem("mdv.sidebar.collapsed") === "1";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("mdv.sidebar.collapsed", collapsed ? "1" : "0");
+    } catch {
+      /* Private mode or blocked storage — the choice just won't persist. */
+    }
+  }, [collapsed]);
   const location = useLocation();
   const { data: live } = useLiveAnnouncements();
 
@@ -24,7 +41,7 @@ export function AppShell() {
     <div className="flex min-h-screen bg-surface-ice">
       {/* Desktop sidebar */}
       <div className="fixed inset-y-0 left-0 z-40 hidden lg:block">
-        <Sidebar />
+        <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed((v) => !v)} />
       </div>
 
       {/* Mobile drawer — Radix dialog gives focus trap, Escape and aria-modal */}
@@ -41,7 +58,12 @@ export function AppShell() {
         </DialogPrimitive.Portal>
       </DialogPrimitive.Root>
 
-      <div className="flex min-w-0 flex-1 flex-col lg:pl-sidebar">
+      <div
+        className={cn(
+          "flex min-w-0 flex-1 flex-col transition-[padding] duration-200",
+          collapsed ? "lg:pl-[76px]" : "lg:pl-sidebar",
+        )}
+      >
         <Topbar onOpenSidebar={() => setDrawerOpen(true)} />
         <main className="mx-auto w-full max-w-shell flex-1 px-4 py-6 md:px-6 md:py-8">
           <Outlet />
