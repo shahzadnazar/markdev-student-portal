@@ -92,17 +92,23 @@ export function AnnouncementTicker({ items }: { items: LiveAnnouncement[] }) {
 
   return (
     <div
-      className="group relative hidden min-w-0 flex-1 items-center gap-2 md:flex"
+      className={
+        // A tinted band rather than loose text on the bar: it marks the strip as
+        // one thing and stops the moving words reading as page content.
+        "group relative hidden min-w-0 flex-1 items-center gap-2.5 rounded-full " +
+        "bg-primary/[0.06] py-1.5 pr-2 pl-3.5 ring-1 ring-primary/10 ring-inset md:flex"
+      }
       role="status"
       aria-live="polite"
       aria-label={`Announcements: ${text}`}
     >
       <Megaphone className="size-4 shrink-0 text-primary" aria-hidden="true" />
 
-      {/* Fades the text in and out at the edges instead of clipping it hard. */}
+      {/* Masked on the inner strip only, so the band stays solid while the words
+          fade in and out at its edges. */}
       <div
         ref={viewportRef}
-        className="relative min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]"
+        className="relative min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_1rem,black_calc(100%-1rem),transparent)]"
       >
         <div
           className="flex w-max animate-[ticker_var(--ticker-duration)_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none"
