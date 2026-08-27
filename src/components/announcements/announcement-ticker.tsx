@@ -4,56 +4,86 @@ import { Link } from "react-router-dom";
 import { paths } from "@/routes/paths";
 import type { LiveAnnouncement } from "@/types";
 
+/** Bodies may carry basic HTML; the ticker is one line of plain text. */
+function plainText(html: string): string {
+  return html
+    .replace(/<br\s*\/?>/gi, " ")
+    .replace(/<\/(p|div|li|h[1-6])>/gi, " ")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Long bodies would stall the loop, so they are cut at a word boundary. */
+function summarise(body: string, limit = 180): string {
+  const text = plainText(body);
+  if (text.length <= limit) return text;
+  const cut = text.slice(0, limit);
+  return cut.slice(0, cut.lastIndexOf(" ") || limit) + "…";
+}
+
 /**
  * Scrolling band of the announcements staff have posted in the last 24 hours.
  *
- * It only scrolls when the text is actually too wide for the space. A short
- * notice that fits sits still, because the seamless loop needs a second copy
- * of the run and that copy would otherwise be on screen — showing the same
- * headline twice side by side.
+ * The track holds two identical runs and slides by exactly half its width, so
+ * the sequence meets its own start and the loop has no seam. Each run is at
+ * least as wide as the viewport, which keeps the second copy off screen —
+ * without that, a short notice would appear twice side by side.
  */
 export function AnnouncementTicker({ items }: { items: LiveAnnouncement[] }) {
   const viewportRef = useRef<HTMLDivElement | null>(null);
-  const runRef = useRef<HTMLDivElement | null>(null);
-  const [overflows, setOverflows] = useState(false);
+  // Each run must be at least the viewport wide or the second copy shows up
+  // alongside the first. `min-w-full` can't express that: the run's containing
+  // block is the content-sized track, not the viewport, so it is measured.
+  const [runWidth, setRunWidth] = useState(0);
 
   useEffect(() => {
     const viewport = viewportRef.current;
-    const run = runRef.current;
-    if (!viewport || !run) return;
-
-    const measure = () => setOverflows(run.scrollWidth > viewport.clientWidth);
+    if (!viewport) return;
+    const measure = () => setRunWidth(viewport.clientWidth);
     measure();
-
-    // The available width changes with the window and with the sidebar.
     const observer = new ResizeObserver(measure);
     observer.observe(viewport);
-    observer.observe(run);
     return () => observer.disconnect();
-  }, [items]);
+    // Depends on items: the first render has none, so the viewport isn't in the
+    // DOM yet and there is nothing to measure until announcements arrive.
+  }, [items.length]);
 
   if (items.length === 0) return null;
 
-  const text = items.map((item) => item.title).join("   •   ");
-  // Roughly 40 characters a second reads comfortably; never faster than 20s.
-  const seconds = Math.max(20, Math.round(text.length / 40) * 2 + 20);
+  const entries = items.map((item) => ({
+    id: item.id,
+    title: item.title,
+    body: summarise(item.body ?? ""),
+  }));
 
-  const run = (key: string, ref?: typeof runRef) => (
+  const text = entries
+    .map((entry) => (entry.body ? `${entry.title}: ${entry.body}` : entry.title))
+    .join("   •   ");
+
+  // Roughly 40 characters a second reads comfortably; never faster than 24s.
+  const seconds = Math.max(24, Math.round(text.length / 40) * 2 + 16);
+
+  const run = (key: string) => (
     <div
-      ref={ref}
       key={key}
       aria-hidden={key === "clone"}
-      className="flex shrink-0 items-center gap-8 pr-8"
+      className="flex shrink-0 items-center gap-10 pr-10"
+      style={{ minWidth: runWidth ? `${runWidth}px` : undefined }}
     >
-      {items.map((item) => (
+      {entries.map((entry) => (
         <Link
-          key={`${key}-${item.id}`}
+          key={`${key}-${entry.id}`}
           to={paths.announcements}
           className="shrink-0 text-body-sm whitespace-nowrap text-on-surface transition-colors hover:text-primary"
         >
-          <span className="font-semibold">{item.title}</span>
-          {item.course ? (
-            <span className="text-on-surface-variant"> · {item.course.title}</span>
+          <span className="font-semibold">{entry.title}</span>
+          {entry.body ? (
+            <span className="text-on-surface-variant">: {entry.body}</span>
           ) : null}
         </Link>
       ))}
@@ -72,24 +102,14 @@ export function AnnouncementTicker({ items }: { items: LiveAnnouncement[] }) {
       {/* Fades the text in and out at the edges instead of clipping it hard. */}
       <div
         ref={viewportRef}
-        className={
-          "relative min-w-0 flex-1 overflow-hidden" +
-          (overflows
-            ? " [mask-image:linear-gradient(to_right,transparent,black_2rem,black_calc(100%-2rem),transparent)]"
-            : "")
-        }
+        className="relative min-w-0 flex-1 overflow-hidden [mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]"
       >
         <div
-          className={
-            "flex w-max" +
-            (overflows
-              ? " animate-[ticker_var(--ticker-duration)_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none"
-              : "")
-          }
+          className="flex w-max animate-[ticker_var(--ticker-duration)_linear_infinite] group-hover:[animation-play-state:paused] motion-reduce:animate-none"
           style={{ ["--ticker-duration" as string]: `${seconds}s` }}
         >
-          {run("main", runRef)}
-          {overflows ? run("clone") : null}
+          {run("main")}
+          {run("clone")}
         </div>
       </div>
     </div>
