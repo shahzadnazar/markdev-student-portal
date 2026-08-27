@@ -2,7 +2,8 @@ import { Bell, LogOut, Menu, Search, Settings, UserRound } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/auth-context";
-import { useNotificationCounts } from "@/hooks/use-engagement";
+import { useLiveAnnouncements, useNotificationCounts } from "@/hooks/use-engagement";
+import { AnnouncementTicker } from "@/components/announcements/announcement-ticker";
 import { initials } from "@/lib/format";
 import { paths } from "@/routes/paths";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,6 +26,7 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { data: counts } = useNotificationCounts();
+  const { data: live } = useLiveAnnouncements();
   const [query, setQuery] = useState("");
 
   const unread = counts?.unread ?? 0;
@@ -68,6 +70,9 @@ export function Topbar({ onOpenSidebar }: TopbarProps) {
           className="bg-surface-ice/60 pl-9"
         />
       </form>
+
+      {/* Runs in the gap between the search box and the notification bell. */}
+      <AnnouncementTicker items={live?.ticker ?? []} />
 
       <div className="ml-auto flex items-center gap-1.5">
         <Button variant="ghost" size="icon" className="sm:hidden" asChild>

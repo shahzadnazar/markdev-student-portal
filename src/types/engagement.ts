@@ -158,6 +158,27 @@ export interface Announcement {
   published_at: string;
 }
 
+/** An announcement still inside its 24-hour live window. */
+export interface LiveAnnouncement {
+  id: number;
+  title: string;
+  body: string;
+  author: { id: number | null; name: string | null };
+  course: { id: number; title: string } | null;
+  published_at: string;
+  /** When it stops being surfaced. */
+  live_until: string;
+}
+
+/**
+ * Split by how each one surfaces: staff announcements run across the top bar,
+ * an instructor's arrive as a popup for their own students.
+ */
+export interface LiveAnnouncements {
+  ticker: LiveAnnouncement[];
+  popup: LiveAnnouncement[];
+}
+
 /* ------------------------------ Notifications ----------------------------- */
 
 export interface AppNotification {

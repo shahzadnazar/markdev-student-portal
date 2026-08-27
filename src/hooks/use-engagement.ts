@@ -294,3 +294,20 @@ export function useMarkNoteRead() {
     },
   });
 }
+/* --------------------------- Live announcements --------------------------- */
+
+/**
+ * Announcements inside their 24-hour window, for the ticker and the popup.
+ *
+ * Polled rather than fetched once so a notice posted while a student is
+ * already signed in still reaches them without a reload.
+ */
+export function useLiveAnnouncements() {
+  return useQuery({
+    queryKey: qk.liveAnnouncements,
+    queryFn: () => announcementsRepository.live(),
+    refetchInterval: 120_000,
+    refetchOnWindowFocus: true,
+    staleTime: 60_000,
+  });
+}

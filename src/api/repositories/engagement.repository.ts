@@ -24,6 +24,7 @@ import type {
   UserSettings,
   DailyAttendancePage,
    Note,
+  LiveAnnouncements,
 } from "@/types";
 
 export const dashboardRepository = {
@@ -77,6 +78,11 @@ export const announcementsRepository = {
 
   markRead(announcementId: number | string) {
     return post<void>(`/announcements/${announcementId}/read`);
+  },
+
+  /** Announcements to surface right now — ticker and popup. */
+  live() {
+    return get<LiveAnnouncements>("/announcements/live");
   },
 };
 

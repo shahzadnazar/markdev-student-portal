@@ -1,6 +1,8 @@
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation } from "react-router-dom";
+import { AnnouncementPopup } from "@/components/announcements/announcement-popup";
+import { useLiveAnnouncements } from "@/hooks/use-engagement";
 import { Sidebar } from "./sidebar";
 import { Topbar } from "./topbar";
 
@@ -11,6 +13,7 @@ import { Topbar } from "./topbar";
 export function AppShell() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
+  const { data: live } = useLiveAnnouncements();
 
   // Close the mobile drawer on any route change.
   useEffect(() => {
@@ -44,6 +47,9 @@ export function AppShell() {
           <Outlet />
         </main>
       </div>
+
+      {/* Instructor announcements arrive here, over whatever page is open. */}
+      <AnnouncementPopup items={live?.popup ?? []} />
     </div>
   );
 }

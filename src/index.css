@@ -180,3 +180,10 @@
   scrollbar-width: thin;
   scrollbar-color: var(--color-outline-variant) transparent;
 }
+
+/* Announcement ticker: the track holds two copies of the list, so sliding it
+   exactly half its width returns to an identical frame and the loop is seamless. */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
