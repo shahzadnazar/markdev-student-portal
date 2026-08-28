@@ -1,3 +1,12 @@
+/** A named part of the teaching day, e.g. Morning 9:00 AM – 11:00 AM. */
+export interface AttendanceSlot {
+  id: number;
+  name: string;
+  /** Formatted by the API in 12-hour form, e.g. "9:00 AM". */
+  start_time: string;
+  end_time: string;
+}
+
 export interface User {
   id: number;
   name: string;
@@ -5,6 +14,8 @@ export interface User {
   avatar_url: string | null;
   phone: string | null;
   batch_no?: string | null;
+  /** The daily slot the admin admitted this student into, times already 12-hour. */
+  attendance_slot?: AttendanceSlot | null;
   //bio: string | null;
   headline: string | null;
   /** Spatie role names, e.g. ["student"]. */

@@ -1,7 +1,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Camera, KeyRound, UserRound } from "lucide-react";
+import { Camera, Clock, KeyRound, Layers, UserRound } from "lucide-react";
 import { useRef, useState } from "react";
 import { useForm, type FieldPath } from "react-hook-form";
 import { toast } from "sonner";
@@ -182,6 +182,27 @@ function IdentityCard({ user, setUser }: UserCardProps) {
         {user.name}
       </h2>
       <p className="text-body-sm text-on-surface-variant">{user.email}</p>
+
+      {/* Batch and slot are assigned by the office, so they are shown rather
+          than edited here. Each is omitted entirely when unset — an empty
+          label reads as missing data rather than as "not applicable". */}
+      {(user.batch_no || user.attendance_slot) && (
+        <div className="mt-2.5 flex flex-wrap justify-center gap-1.5">
+          {user.batch_no && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-ice px-2.5 py-1 font-mono text-label-sm text-on-surface-variant">
+              <Layers className="size-3.5 text-primary" aria-hidden="true" />
+              {user.batch_no}
+            </span>
+          )}
+          {user.attendance_slot && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-ice px-2.5 py-1 font-mono text-label-sm text-on-surface-variant">
+              <Clock className="size-3.5 text-primary" aria-hidden="true" />
+              {`${user.attendance_slot.name} (${user.attendance_slot.start_time} – ${user.attendance_slot.end_time})`}
+            </span>
+          )}
+        </div>
+      )}
+
       {user.headline && (
         <p className="mt-2 text-body-sm text-on-surface-variant">
           {user.headline}
