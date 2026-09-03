@@ -254,6 +254,8 @@ export interface DashboardData {
   recent_announcements: Announcement[];
   /** Daily learning minutes for the trailing 4 weeks. */
   activity: { date: string; minutes: number }[];
+  /** Monthly learning progress by activity type, same series as /progress. */
+  progress: ProgressPoint[];
 }
 
 /* ------------------------------- Help Center ------------------------------ */

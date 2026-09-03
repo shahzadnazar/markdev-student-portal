@@ -15,7 +15,7 @@ import { useProgress } from "@/hooks/use-engagement";
 import { formatCompact, formatDuration } from "@/lib/format";
 import type { ProgressOverview } from "@/types";
 import { CourseProgressGroups } from "./course-progress-groups";
-import { ProgressProgressCard } from "./progress-activity-card";
+import { LearningProgressCard } from "@/components/charts/learning-progress-card";
 
 function ProgressStats({ overview }: { overview: ProgressOverview }) {
   // Unused while the "In progress" StatCard below is commented out.
@@ -125,7 +125,7 @@ function ProgressContent({ overview }: { overview: ProgressOverview }) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" }}
       >
-        <ProgressProgressCard progress={overview.progress} />
+        <LearningProgressCard progress={overview.progress} />
       </motion.div>
 
       <motion.div

@@ -18,9 +18,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
-import type { ProgressOverview } from "@/types";
-
-type ProgressPoint = ProgressOverview["progress"][number];
+import { cn } from "@/lib/utils";
+import type { ProgressPoint } from "@/types";
 
 const chart = {
   lessons: "#124389",
@@ -52,86 +51,77 @@ function ProgressTooltip({
     return null;
   }
 
-  const total =
-    point.lessons +
-    point.quizzes +
-    point.assignments +
-    point.attendance +
-    point.notes;
-
   return (
     <div className="rounded-xl bg-white px-4 py-3 shadow-elevated ring-1 ring-outline-variant/40">
       <p className="font-mono text-label-sm uppercase text-on-surface-variant">
         {format(parseISO(point.month), "MMMM yyyy")}
       </p>
 
+      {/* Every series is a share of what was available to this student that
+          month, so each carries a % — they are not counts and must not be
+          added together. */}
       <div className="mt-2 space-y-1.5 text-body-sm">
         <p>
-          <span className="font-semibold">
-            {point.lessons}
-          </span>{" "}
-          lessons completed
+          <span className="font-semibold">{point.lessons}%</span> of lessons
+          completed
         </p>
 
         <p>
-          <span className="font-semibold">
-            {point.quizzes}
-          </span>{" "}
-          quizzes completed
+          <span className="font-semibold">{point.quizzes}%</span> of quizzes
+          completed
         </p>
 
         <p>
-          <span className="font-semibold">
-            {point.assignments}
-          </span>{" "}
+          <span className="font-semibold">{point.assignments}%</span> of
           assignments submitted
         </p>
 
         <p>
-          <span className="font-semibold">
-            {point.attendance}%
-          </span>{" "}
-          attendance
+          <span className="font-semibold">{point.attendance}%</span> attendance
         </p>
 
         <p>
-          <span className="font-semibold">
-            {point.notes}
-          </span>{" "}
-          notes read
-        </p>
-
-        <p className="border-t pt-1.5 font-semibold">
-          {total} total activities
+          <span className="font-semibold">{point.notes}%</span> of notes read
         </p>
       </div>
     </div>
   );
 }
 
-interface ProgressProgressCardProps {
+interface LearningProgressCardProps {
   progress: ProgressPoint[];
+  className?: string;
 }
 
-export function ProgressProgressCard({
+/**
+ * Monthly learning progress, shared by the dashboard and the progress page.
+ *
+ * One component rather than one per page: the two were separate charts of
+ * different data, so the dashboard showed daily minutes while the progress page
+ * showed monthly activity, and only one of them was the chart people meant by
+ * "learning progress".
+ */
+export function LearningProgressCard({
   progress,
-}: ProgressProgressCardProps) {
-  const totalActivities = useMemo(
+  className,
+}: LearningProgressCardProps) {
+  // The series are percentages, so they cannot be summed into a total. What is
+  // worth stating is whether anything has been recorded at all.
+  const hasActivity = useMemo(
     () =>
-      progress.reduce(
-        (total, point) =>
-          total +
-          point.lessons +
-          point.quizzes +
-          point.assignments +
-          point.notes,
-        0,
+      progress.some(
+        (point) =>
+          point.lessons > 0 ||
+          point.quizzes > 0 ||
+          point.assignments > 0 ||
+          point.attendance > 0 ||
+          point.notes > 0,
       ),
     [progress],
   );
 
   return (
-    <Card>
+    <Card className={cn("h-full", className)}>
       <CardHeader>
         <p className="font-mono text-label-sm uppercase text-primary">
           Last 12 months
@@ -140,8 +130,8 @@ export function ProgressProgressCard({
         <CardTitle>Learning progress</CardTitle>
 
         <CardDescription>
-          {totalActivities > 0
-            ? `${totalActivities} learning activities completed across the last twelve months.`
+          {hasActivity
+            ? "How much of your lessons, quizzes, assignments, attendance and notes you completed each month."
             : "Your lessons, quizzes, assignments, attendance and notes will appear here."}
         </CardDescription>
       </CardHeader>
@@ -155,7 +145,7 @@ export function ProgressProgressCard({
           <div
             className="h-80 w-full"
             role="img"
-            aria-label="Monthly learning progress showing lessons, quizzes, assignments, attendance and notes"
+            aria-label="Monthly percentage completed for lessons, quizzes, assignments, attendance and notes"
           >
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
@@ -192,6 +182,8 @@ export function ProgressProgressCard({
 
                 <YAxis
                   allowDecimals={false}
+                  domain={[0, 100]}
+                  tickFormatter={(value: number) => `${value}%`}
                   tick={{
                     fill: chart.tick,
                     fontSize: 11,
@@ -199,7 +191,7 @@ export function ProgressProgressCard({
                   }}
                   tickLine={false}
                   axisLine={false}
-                  width={32}
+                  width={40}
                 />
 
                 <Tooltip

@@ -20,7 +20,7 @@ import { useDashboard } from "@/hooks/use-engagement";
 import { formatCompact, formatDate, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { DashboardData } from "@/types";
-import { ActivityChartCard } from "./activity-chart-card";
+import { LearningProgressCard } from "@/components/charts/learning-progress-card";
 import { AnnouncementsCard } from "./announcements-card";
 import { ContinueLearningSection } from "./continue-learning-section";
 import { DashboardSkeleton } from "./dashboard-skeleton";
@@ -283,7 +283,7 @@ function DashboardContent({ data }: { data: DashboardData }) {
           transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" }}
           className="lg:col-span-3"
         >
-          <ActivityChartCard activity={data.activity} />
+          <LearningProgressCard progress={data.progress} />
         </motion.div>
         <motion.div
           {...sectionMotion}
