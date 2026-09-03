@@ -1,15 +1,7 @@
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { motion } from "framer-motion";
-import {
-  AlertCircle,
-  CalendarDays,
-  CheckCircle2,
-  Clock,
-  Compass,
-  TrendingUp,
-  X,
-} from "lucide-react";
+import { AlertCircle, CalendarDays, CalendarOff, CheckCircle2, Clock, Compass, TrendingUp, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
@@ -126,8 +118,8 @@ export default function AttendancePage() {
       {/* Summary stats */}
       <section aria-label="Attendance summary" className="mb-6">
         {summaryQuery.isLoading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {Array.from({ length: 4 }, (_, index) => (
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {Array.from({ length: 5 }, (_, index) => (
               <StatCardSkeleton key={index} />
             ))}
           </div>
@@ -141,12 +133,13 @@ export default function AttendancePage() {
             className="py-10"
           />
         ) : summaryQuery.data ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <StatCard
               label="Attendance rate"
               value={formatPercent(summaryQuery.data.attendance_rate)}
               icon={TrendingUp}
               tone="primary"
+              hintBelow
               hint={`${summaryQuery.data.total_sessions} ${
                 summaryQuery.data.total_sessions === 1 ? "session" : "sessions"
               } tracked`}
@@ -156,6 +149,7 @@ export default function AttendancePage() {
               value={summaryQuery.data.present_count}
               icon={CheckCircle2}
               tone="success"
+              hintBelow
               hint={`of ${summaryQuery.data.total_sessions} sessions`}
             />
             <StatCard
@@ -163,6 +157,7 @@ export default function AttendancePage() {
               value={summaryQuery.data.late_count}
               icon={Clock}
               tone="warning"
+              hintBelow
               hint="Joined after the session started"
             />
             <StatCard
@@ -170,7 +165,16 @@ export default function AttendancePage() {
               value={summaryQuery.data.absent_count}
               icon={AlertCircle}
               tone="warning"
-              hint={`${summaryQuery.data.excused_count} excused`}
+              hintBelow
+              hint="Missed without an approved leave"
+            />
+            <StatCard
+              label="Leave"
+              value={summaryQuery.data.excused_count}
+              icon={CalendarOff}
+              tone="secondary"
+              hintBelow
+              hint="Excused — an approved leave covered the session"
             />
           </div>
         ) : null}
