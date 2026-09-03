@@ -7,6 +7,12 @@ export interface AttendanceSlot {
   end_time: string;
 }
 
+/** The course a student is currently taking, and when they joined it. */
+export interface UserEnrollment {
+  course: { id: number; title: string } | null;
+  enrolled_at: string | null;
+}
+
 export interface User {
   id: number;
   name: string;
@@ -16,6 +22,10 @@ export interface User {
   batch_no?: string | null;
   /** The daily slot the admin admitted this student into, times already 12-hour. */
   attendance_slot?: AttendanceSlot | null;
+  /** From the admission record; null for accounts without a student profile. */
+  emergency_contact?: string | null;
+  /** Newest unfinished enrolment, or the newest overall once all are done. */
+  enrollment?: UserEnrollment | null;
   //bio: string | null;
   headline: string | null;
   /** Spatie role names, e.g. ["student"]. */

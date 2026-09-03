@@ -363,14 +363,20 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
             <p className="text-label-sm text-on-surface-variant">
               Current course
             </p>
-            <p className="mt-1 text-body-md text-on-surface">Web Development</p>
+            <p className="mt-1 text-body-md text-on-surface">
+              {user.enrollment?.course?.title ?? "Not enrolled yet"}
+            </p>
           </div>
 
           <div>
             <p className="text-label-sm text-on-surface-variant">
               Enrollment date
             </p>
-            <p className="mt-1 text-body-md text-on-surface">August 13, 2026</p>
+            <p className="mt-1 text-body-md text-on-surface">
+              {user.enrollment?.enrolled_at
+                ? formatDate(user.enrollment.enrolled_at)
+                : "—"}
+            </p>
           </div>
 
           <div>
@@ -386,7 +392,9 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
             <p className="text-label-sm text-on-surface-variant">
               Emergency number
             </p>
-            <p className="mt-1 text-body-md text-on-surface">+92 300 0000000</p>
+            <p className="mt-1 text-body-md text-on-surface">
+              {user.emergency_contact ?? "—"}
+            </p>
           </div>
         </div>
       </Card>
