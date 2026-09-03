@@ -11,11 +11,13 @@ const statusConfig = invoiceStatusConfig;
 
 interface InvoiceDialogProps {
   invoice: Invoice | null;
+  /** Academy name from Settings; the header falls back only if it is absent. */
+  siteName?: string | null;
   onClose: () => void;
 }
 
 /** The invoice viewer modal — gradient header, line item, totals, status. */
-export function InvoiceDialog({ invoice, onClose }: InvoiceDialogProps) {
+export function InvoiceDialog({ invoice, siteName, onClose }: InvoiceDialogProps) {
   const { user } = useAuth();
 
   if (!invoice) return null;
@@ -44,7 +46,7 @@ export function InvoiceDialog({ invoice, onClose }: InvoiceDialogProps) {
             aria-hidden="true"
             className="pointer-events-none absolute inset-0 flex rotate-[-20deg] items-center justify-center font-display text-5xl font-black tracking-widest text-primary/[0.04] select-none"
           >
-            MARKDEV
+            {(siteName ?? "MarkDev").toUpperCase()}
           </span>
 
           <div className="relative">

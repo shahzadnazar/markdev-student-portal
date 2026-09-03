@@ -95,6 +95,8 @@ export interface BillingOverview {
   /** Configured accounts with full details, scoped to the plan's course. */
   payment_methods?: PaymentMethodInfo[];
   support_phone: string | null;
+  /** Academy name from Settings — printed on the invoice header. */
+  site_name: string | null;
   /** Present when the plan is a monthly installment schedule. */
   installments: InstallmentInfo | null;
   /** Unsettled one-time admission charges (registration fee + advance 1st installment). */

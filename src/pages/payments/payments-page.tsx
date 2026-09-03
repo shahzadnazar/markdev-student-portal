@@ -102,7 +102,11 @@ export default function PaymentsPage() {
             overview={overview}
             onClose={() => setPaying(null)}
           />
-          <InvoiceDialog invoice={viewingInvoice} onClose={() => setViewingInvoice(null)} />
+          <InvoiceDialog
+            invoice={viewingInvoice}
+            siteName={overview?.site_name}
+            onClose={() => setViewingInvoice(null)}
+          />
         </div>
       ) : (
         <EmptyState

@@ -248,6 +248,8 @@ export interface DashboardData {
     /** True when an approved leave covers today. */
     approved_leave_today?: boolean;
     pending_leaves?: number;
+    /** Notes published to the courses this student is enrolled in. */
+    notes_available?: number;
   };
   continue_learning: CourseProgress[];
   upcoming: CalendarEvent[];

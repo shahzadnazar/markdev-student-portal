@@ -217,10 +217,14 @@ function StatsGrid({ stats }: { stats: DashboardData["stats"] }) {
       >
         <StatCard
           label="My notes"
-          value="View"
+          value={formatCompact(stats.notes_available ?? 0)}
           icon={NotebookPen}
           tone="secondary"
-          hint="Open your saved notes"
+          hint={
+            (stats.notes_available ?? 0) === 1
+              ? "1 note shared with you"
+              : `${stats.notes_available ?? 0} notes shared with you`
+          }
           className="h-full transition-transform duration-200 hover:-translate-y-0.5"
         />
       </Link>
