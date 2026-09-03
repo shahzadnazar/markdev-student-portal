@@ -118,7 +118,7 @@ export default function AttendancePage() {
       {/* Summary stats */}
       <section aria-label="Attendance summary" className="mb-6">
         {summaryQuery.isLoading ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {Array.from({ length: 5 }, (_, index) => (
               <StatCardSkeleton key={index} />
             ))}
@@ -133,7 +133,7 @@ export default function AttendancePage() {
             className="py-10"
           />
         ) : summaryQuery.data ? (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <StatCard
               label="Attendance rate"
               value={formatPercent(summaryQuery.data.attendance_rate)}
@@ -158,7 +158,7 @@ export default function AttendancePage() {
               icon={Clock}
               tone="warning"
               hintBelow
-              hint="Joined after the session started"
+              hint="After the start time"
             />
             <StatCard
               label="Absent"
@@ -166,7 +166,7 @@ export default function AttendancePage() {
               icon={AlertCircle}
               tone="warning"
               hintBelow
-              hint="Missed without an approved leave"
+              hint="Missed, unexcused"
             />
             <StatCard
               label="Leave"

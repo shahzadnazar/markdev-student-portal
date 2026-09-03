@@ -44,9 +44,20 @@ export function StatCard({
       transition={{ duration: 0.35, ease: "easeOut" }}
       className={className}
     >
-      <Card className="flex h-full flex-col p-6 transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated active:translate-y-0 active:shadow-card">
-        <div className="flex items-start gap-4">
-          <div className={cn("flex size-11 shrink-0 items-center justify-center rounded-xl", toneStyles[tone])}>
+      <Card
+        className={cn(
+          "flex h-full flex-col transition-all duration-200 hover:-translate-y-0.5 hover:shadow-elevated active:translate-y-0 active:shadow-card",
+          hintBelow ? "p-4" : "p-6",
+        )}
+      >
+        <div className={cn("flex items-start", hintBelow ? "gap-3" : "gap-4")}>
+          <div
+            className={cn(
+              "flex shrink-0 items-center justify-center rounded-xl",
+              hintBelow ? "size-10" : "size-11",
+              toneStyles[tone],
+            )}
+          >
             <Icon className="size-5" aria-hidden="true" />
           </div>
           <div className="min-w-0 flex-1">
@@ -55,22 +66,29 @@ export function StatCard({
                 "font-mono text-label-sm text-on-surface-variant uppercase",
                 // A two-word label wraps in a narrow card while its neighbours
                 // keep one line, which drops that card's value a row below the
-                // others. Reserving two lines keeps every value on one baseline.
-                hintBelow && "min-h-8",
+                // others. Reserving two lines keeps every value on one baseline;
+                // bottom-aligning inside that block keeps the one-line labels
+                // sitting right on top of their value instead of a line above.
+                hintBelow && "flex min-h-8 items-end",
               )}
             >
               {label}
             </p>
-            <p className="mt-1 font-display text-headline-md text-on-surface">{value}</p>
+            <p
+              className={cn(
+                "font-display text-headline-md text-on-surface",
+                hintBelow ? "mt-0.5" : "mt-1",
+              )}
+            >
+              {value}
+            </p>
             {hint && ! hintBelow ? (
               <p className="mt-0.5 truncate text-body-sm text-on-surface-variant">{hint}</p>
             ) : null}
           </div>
         </div>
         {hint && hintBelow ? (
-          <p className="mt-auto pt-3 text-body-sm text-balance text-on-surface-variant">
-            {hint}
-          </p>
+          <p className="mt-2 text-body-sm text-balance text-on-surface-variant">{hint}</p>
         ) : null}
       </Card>
     </motion.div>
