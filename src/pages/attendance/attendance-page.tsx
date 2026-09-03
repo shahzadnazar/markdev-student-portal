@@ -174,7 +174,7 @@ export default function AttendancePage() {
               icon={CalendarOff}
               tone="secondary"
               hintBelow
-              hint="Excused — an approved leave covered the session"
+              hint="Approved leave"
             />
           </div>
         ) : null}
