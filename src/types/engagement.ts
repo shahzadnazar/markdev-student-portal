@@ -299,7 +299,6 @@ export interface NotificationPreferences {
 }
 
 export interface UserSettings {
-  timezone: string;
   language: string;
   notifications: NotificationPreferences;
 }

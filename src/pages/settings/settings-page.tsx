@@ -1,6 +1,5 @@
 import { motion } from "framer-motion";
 import { BellRing, Globe } from "lucide-react";
-import { useMemo } from "react";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/shared/error-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -10,7 +9,6 @@ import {
   Select,
   SelectContent,
   SelectItem,
-  SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -68,15 +66,6 @@ export default function SettingsPage() {
 
   const settings = settingsQuery.data;
 
-  const timezones = useMemo(() => {
-    const all = Intl.supportedValuesOf("timeZone");
-    const local = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const pinned = ["UTC", local].filter(
-      (zone, index, self) => self.indexOf(zone) === index && all.includes(zone),
-    );
-    return { pinned, all: all.filter((zone) => !pinned.includes(zone)) };
-  }, []);
-
   function save(patch: Partial<UserSettings>, options?: { silent?: boolean }) {
     updateSettings.mutate(patch, {
       onSuccess: () => {
@@ -91,14 +80,13 @@ export default function SettingsPage() {
       <PageHeader
         eyebrow="Account"
         title="Settings"
-        description="Language, timezone and how MarkDev keeps you informed."
+        description="Language and how MarkDev keeps you informed."
       />
 
       {settingsQuery.isLoading ? (
         <div className="max-w-3xl space-y-6">
           <Card className="space-y-5 p-6">
             <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
           </Card>
           <Card className="space-y-5 p-6">
@@ -136,32 +124,6 @@ export default function SettingsPage() {
               </div>
 
               <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="settings-timezone">Timezone</Label>
-                  <Select
-                    value={settings.timezone}
-                    onValueChange={(value) => save({ timezone: value })}
-                    disabled={updateSettings.isPending}
-                  >
-                    <SelectTrigger id="settings-timezone" aria-label="Timezone">
-                      <SelectValue placeholder="Select a timezone" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {timezones.pinned.map((zone) => (
-                        <SelectItem key={zone} value={zone}>
-                          {zone}
-                        </SelectItem>
-                      ))}
-                      <SelectSeparator />
-                      {timezones.all.map((zone) => (
-                        <SelectItem key={zone} value={zone}>
-                          {zone}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
                 <div className="space-y-1.5">
                   <Label htmlFor="settings-language">Language</Label>
                   <Select
