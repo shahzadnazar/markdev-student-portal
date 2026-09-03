@@ -352,6 +352,13 @@ function ProfileDetailsCard({ user, setUser }: UserCardProps) {
         </div>
 
         <div className="grid gap-5 sm:grid-cols-2">
+          {/* The name the office admitted this student under — first, because
+              it is what the rest of the record hangs off. */}
+          <div>
+            <p className="text-label-sm text-on-surface-variant">Full name</p>
+            <p className="mt-1 text-body-md text-on-surface">{user.name}</p>
+          </div>
+
           <div>
             <p className="text-label-sm text-on-surface-variant">
               Current course
