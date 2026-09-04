@@ -23,6 +23,7 @@ import type {
   SearchResults,
   UserSettings,
   DailyAttendancePage,
+  DailyAttendanceParams,
    Note,
   LiveAnnouncements,
 } from "@/types";
@@ -43,7 +44,7 @@ export const attendanceRepository = {
     return get<AttendanceSummary>("/attendance/summary", { params });
   },
 
-  daily(params: { page?: number; per_page?: number } = {}) {
+  daily(params: DailyAttendanceParams = {}) {
     return getRaw<DailyAttendancePage>("/attendance/daily", { params });
   },
 };

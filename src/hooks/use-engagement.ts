@@ -21,6 +21,7 @@ import { qk } from "@/lib/query-keys";
 import type {
   ApplyLeavePayload,
   AttendanceParams,
+  DailyAttendanceParams,
   BookmarkableType,
   Leaderboard,
   ListParams,
@@ -42,7 +43,7 @@ export function useAttendance(params: AttendanceParams = {}) {
   });
 }
 
-export function useDailyAttendance(params: { page?: number; per_page?: number } = {}) {
+export function useDailyAttendance(params: DailyAttendanceParams = {}) {
   return useQuery({
     queryKey: qk.attendanceDaily(params),
     queryFn: () => attendanceRepository.daily(params),

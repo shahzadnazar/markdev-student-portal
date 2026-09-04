@@ -19,7 +19,8 @@ export interface AttendanceSummary {
   present_count: number;
   absent_count: number;
   late_count: number;
-  excused_count: number;
+  /** Days covered by an approved leave application. */
+  leave_count: number;
   /** Percentage 0–100. */
   attendance_rate: number;
 }
@@ -40,6 +41,12 @@ export interface DailyAttendanceRecord {
   corrected: boolean;
 }
 
+export interface DailyAttendanceParams extends ListParams {
+  from?: string;
+  to?: string;
+  status?: DailyAttendanceStatus;
+}
+
 export interface DailyAttendancePage {
   data: DailyAttendanceRecord[];
   meta: {
@@ -47,6 +54,8 @@ export interface DailyAttendancePage {
     last_page: number;
     per_page: number;
     total: number;
+    from: number | null;
+    to: number | null;
   };
 }
 

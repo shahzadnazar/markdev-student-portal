@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { format, parseISO } from "date-fns";
 import { motion } from "framer-motion";
-import { AlertCircle, CalendarDays, CalendarOff, CheckCircle2, Clock, Compass, TrendingUp, X } from "lucide-react";
-import { Link } from "react-router-dom";
+import { AlertCircle, CalendarDays, CalendarOff, CheckCircle2, Clock, TrendingUp, X } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
 import { ErrorState } from "@/components/shared/error-state";
 import { PageHeader } from "@/components/shared/page-header";
@@ -22,35 +21,24 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAttendance, useAttendanceSummary, useDailyAttendance } from "@/hooks/use-engagement";
+import { useAttendanceSummary, useDailyAttendance } from "@/hooks/use-engagement";
 import { formatDate, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import { paths } from "@/routes/paths";
-import type { AttendanceRecord, AttendanceStatus, DailyAttendanceStatus } from "@/types";
+import type { DailyAttendanceRecord, DailyAttendanceStatus } from "@/types";
 
 const PER_PAGE = 10;
 
-type StatusFilter = AttendanceStatus | "all";
+type StatusFilter = DailyAttendanceStatus | "all";
 
 const statusOptions: ReadonlyArray<{ value: StatusFilter; label: string }> = [
   { value: "all", label: "All statuses" },
   { value: "present", label: "Present" },
-  { value: "absent", label: "Absent" },
   { value: "late", label: "Late" },
-  { value: "excused", label: "Excused" },
+  { value: "absent", label: "Absent" },
+  { value: "leave", label: "Leave" },
 ];
 
 const statusBadge: Record<
-  AttendanceStatus,
-  { variant: "success" | "warning" | "error" | "neutral"; label: string }
-> = {
-  present: { variant: "success", label: "Present" },
-  late: { variant: "warning", label: "Late" },
-  absent: { variant: "error", label: "Absent" },
-  excused: { variant: "neutral", label: "Excused" },
-};
-
-const dailyBadge: Record<
   DailyAttendanceStatus,
   { variant: "success" | "warning" | "error" | "neutral"; label: string }
 > = {
@@ -61,28 +49,32 @@ const dailyBadge: Record<
 };
 
 /** Shared column template for the desktop table header and rows. */
-const rowGrid = "md:grid-cols-[9.5rem_minmax(0,1.6fr)_7.5rem_minmax(0,1fr)]";
+const rowGrid = "md:grid-cols-[12rem_9rem_minmax(0,1fr)]";
 
+/**
+ * The student's attendance, which at this academy means the daily register.
+ *
+ * Everything on this page reads that one table. The cards used to count
+ * per-class AttendanceRecords instead, which approved leave never touches, so
+ * the Leave card read zero on a page whose every listed day said Leave.
+ */
 export default function AttendancePage() {
   const [status, setStatus] = useState<StatusFilter>("all");
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
 
-  const summaryQuery = useAttendanceSummary({
-    from: from || undefined,
-    to: to || undefined,
-  });
-
-  const attendanceQuery = useAttendance({
-    page,
-    per_page: PER_PAGE,
+  const filters = {
     status: status === "all" ? undefined : status,
     from: from || undefined,
     to: to || undefined,
-  });
+  };
+
+  const summaryQuery = useAttendanceSummary({ from: filters.from, to: filters.to });
+  const dailyQuery = useDailyAttendance({ ...filters, page, per_page: PER_PAGE });
 
   const hasFilters = status !== "all" || from !== "" || to !== "";
+  const records = dailyQuery.data?.data ?? [];
 
   const handleStatusChange = (value: string) => {
     setStatus(value as StatusFilter);
@@ -101,162 +93,20 @@ export default function AttendancePage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const records = attendanceQuery.data?.data ?? [];
-  const dailyQuery = useDailyAttendance({ per_page: 14 });
-  const dailyRecords = dailyQuery.data?.data ?? [];
-
   return (
     <div>
       <PageHeader
         eyebrow="Learning"
         title="Attendance"
-        description="Your presence across live sessions — track your attendance rate and review every session you've joined or missed."
+        description="Your day-by-day record at the academy — marked at the front desk or by the biometric terminal."
       />
 
-      <LeaveSection />
-
-      {/* Summary stats */}
-      <section aria-label="Attendance summary" className="mb-6">
-        {summaryQuery.isLoading ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            {Array.from({ length: 5 }, (_, index) => (
-              <StatCardSkeleton key={index} />
-            ))}
-          </div>
-        ) : summaryQuery.isError ? (
-          <ErrorState
-            title="Couldn't load your attendance summary"
-            error={summaryQuery.error}
-            onRetry={() => {
-              void summaryQuery.refetch();
-            }}
-            className="py-10"
-          />
-        ) : summaryQuery.data ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-            <StatCard
-              label="Attendance rate"
-              value={formatPercent(summaryQuery.data.attendance_rate)}
-              icon={TrendingUp}
-              tone="primary"
-              hintBelow
-              hint={`${summaryQuery.data.total_sessions} ${
-                summaryQuery.data.total_sessions === 1 ? "session" : "sessions"
-              } tracked`}
-            />
-            <StatCard
-              label="Present"
-              value={summaryQuery.data.present_count}
-              icon={CheckCircle2}
-              tone="success"
-              hintBelow
-              hint={`of ${summaryQuery.data.total_sessions} sessions`}
-            />
-            <StatCard
-              label="Late"
-              value={summaryQuery.data.late_count}
-              icon={Clock}
-              tone="warning"
-              hintBelow
-              hint="After the start time"
-            />
-            <StatCard
-              label="Absent"
-              value={summaryQuery.data.absent_count}
-              icon={AlertCircle}
-              tone="warning"
-              hintBelow
-              hint="Missed, unexcused"
-            />
-            <StatCard
-              label="Leave"
-              value={summaryQuery.data.excused_count}
-              icon={CalendarOff}
-              tone="secondary"
-              hintBelow
-              hint="Approved leave"
-            />
-          </div>
-        ) : null}
-      </section>
-
-      {/* Daily register */}
-      <motion.section
-        aria-label="Daily attendance"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.03, ease: "easeOut" }}
-        className="mb-6"
-      >
-        <Card className="gap-0 p-6">
-          <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
-            <div>
-              <h2 className="font-display text-base font-semibold text-on-surface">Daily attendance</h2>
-              <p className="text-sm text-on-surface-variant">
-                Your day-by-day record at the academy — marked at the front desk or by the biometric terminal.
-              </p>
-            </div>
-            {dailyQuery.data ? (
-              <span className="font-mono text-xs text-on-surface-variant/70">
-                last {dailyRecords.length} of {dailyQuery.data.meta.total} days
-              </span>
-            ) : null}
-          </div>
-
-          {dailyQuery.isLoading ? (
-            <div className="grid gap-2 sm:grid-cols-2">
-              {Array.from({ length: 4 }, (_, index) => (
-                <Skeleton key={index} className="h-12 rounded-xl" />
-              ))}
-            </div>
-          ) : dailyQuery.isError ? (
-            <ErrorState
-              title="Couldn't load your daily attendance"
-              error={dailyQuery.error}
-              onRetry={() => {
-                void dailyQuery.refetch();
-              }}
-              className="py-8"
-            />
-          ) : dailyRecords.length === 0 ? (
-            <p className="rounded-xl bg-surface-ice/60 px-4 py-6 text-center text-sm text-on-surface-variant">
-              No daily attendance has been marked for you yet.
-            </p>
-          ) : (
-            <ul className="grid gap-2 sm:grid-cols-2">
-              {dailyRecords.map((day) => (
-                <li
-                  key={day.id}
-                  className="flex items-center gap-3 rounded-xl border border-outline/10 bg-surface px-4 py-3"
-                >
-                  <span className="w-24 shrink-0 font-mono text-xs text-on-surface-variant">
-                    {format(parseISO(day.date), "EEE, MMM d")}
-                  </span>
-                  <Badge variant={dailyBadge[day.status].variant}>{dailyBadge[day.status].label}</Badge>
-                  {day.arrived_at ? (
-                    <span className="shrink-0 font-mono text-[11px] text-on-surface-variant/80">arr. {day.arrived_at}</span>
-                  ) : null}
-                  <span className="min-w-0 flex-1 truncate text-sm text-on-surface-variant" title={day.remarks ?? undefined}>
-                    {day.remarks ?? ""}
-                  </span>
-                  {day.corrected ? (
-                    <span className="shrink-0 font-mono text-[10px] uppercase tracking-wide text-on-surface-variant/60">
-                      corrected
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </Card>
-      </motion.section>
-
-      {/* Filters */}
+      {/* Filters — first, because they narrow everything below them. */}
       <motion.section
         aria-label="Filter attendance records"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
         className="mb-6"
       >
         <Card className="gap-0 p-6">
@@ -315,6 +165,73 @@ export default function AttendancePage() {
         </Card>
       </motion.section>
 
+      <LeaveSection />
+
+      {/* Summary stats */}
+      <section aria-label="Attendance summary" className="mb-6">
+        {summaryQuery.isLoading ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            {Array.from({ length: 5 }, (_, index) => (
+              <StatCardSkeleton key={index} />
+            ))}
+          </div>
+        ) : summaryQuery.isError ? (
+          <ErrorState
+            title="Couldn't load your attendance summary"
+            error={summaryQuery.error}
+            onRetry={() => {
+              void summaryQuery.refetch();
+            }}
+            className="py-10"
+          />
+        ) : summaryQuery.data ? (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+            <StatCard
+              label="Attendance rate"
+              value={formatPercent(summaryQuery.data.attendance_rate)}
+              icon={TrendingUp}
+              tone="primary"
+              hintBelow
+              hint={`${summaryQuery.data.total_sessions} ${
+                summaryQuery.data.total_sessions === 1 ? "day" : "days"
+              } tracked`}
+            />
+            <StatCard
+              label="Present"
+              value={summaryQuery.data.present_count}
+              icon={CheckCircle2}
+              tone="success"
+              hintBelow
+              hint={`of ${summaryQuery.data.total_sessions} days`}
+            />
+            <StatCard
+              label="Late"
+              value={summaryQuery.data.late_count}
+              icon={Clock}
+              tone="warning"
+              hintBelow
+              hint="After the start time"
+            />
+            <StatCard
+              label="Absent"
+              value={summaryQuery.data.absent_count}
+              icon={AlertCircle}
+              tone="warning"
+              hintBelow
+              hint="Missed, unexcused"
+            />
+            <StatCard
+              label="Leave"
+              value={summaryQuery.data.leave_count}
+              icon={CalendarOff}
+              tone="secondary"
+              hintBelow
+              hint="Approved leave"
+            />
+          </div>
+        ) : null}
+      </section>
+
       {/* Records */}
       <motion.section
         aria-label="Attendance records"
@@ -322,28 +239,28 @@ export default function AttendancePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, delay: 0.1, ease: "easeOut" }}
       >
-        {attendanceQuery.isLoading ? (
+        {dailyQuery.isLoading ? (
           <Card className="gap-0 overflow-hidden py-0">
             {Array.from({ length: 6 }, (_, index) => (
               <AttendanceRowSkeleton key={index} withBorder={index > 0} />
             ))}
           </Card>
-        ) : attendanceQuery.isError ? (
+        ) : dailyQuery.isError ? (
           <ErrorState
             title="Couldn't load your attendance records"
-            error={attendanceQuery.error}
+            error={dailyQuery.error}
             onRetry={() => {
-              void attendanceQuery.refetch();
+              void dailyQuery.refetch();
             }}
           />
-        ) : !attendanceQuery.data || attendanceQuery.data.data.length === 0 ? (
+        ) : records.length === 0 ? (
           <EmptyState
             icon={CalendarDays}
-            title={hasFilters ? "No records match your filters" : "No attendance records yet"}
+            title={hasFilters ? "No days match your filters" : "No attendance marked yet"}
             description={
               hasFilters
-                ? "Try widening the date range or switching the status filter to see more sessions."
-                : "Once your courses hold live sessions, your attendance will be recorded and shown here."
+                ? "Try widening the date range or switching the status filter to see more days."
+                : "Once the academy starts marking the register, every one of your days will be listed here."
             }
             action={
               hasFilters ? (
@@ -351,27 +268,20 @@ export default function AttendancePage() {
                   <X aria-hidden="true" />
                   Clear filters
                 </Button>
-              ) : (
-                <Button variant="secondary" asChild>
-                  <Link to={paths.courses}>
-                    <Compass aria-hidden="true" />
-                    Browse courses
-                  </Link>
-                </Button>
-              )
+              ) : undefined
             }
           />
         ) : (
           <>
             <p className="mb-4 font-mono text-label-sm text-on-surface-variant uppercase">
-              {attendanceQuery.data.meta.total}{" "}
-              {attendanceQuery.data.meta.total === 1 ? "record" : "records"}
+              {dailyQuery.data?.meta.total}{" "}
+              {dailyQuery.data?.meta.total === 1 ? "day" : "days"}
             </p>
 
             <Card
               className={cn(
                 "gap-0 overflow-hidden py-0 transition-opacity duration-200",
-                attendanceQuery.isPlaceholderData && attendanceQuery.isFetching && "opacity-60",
+                dailyQuery.isPlaceholderData && dailyQuery.isFetching && "opacity-60",
               )}
             >
               {/* Desktop table header */}
@@ -383,9 +293,8 @@ export default function AttendancePage() {
                 )}
               >
                 <span>Date</span>
-                <span>Session</span>
                 <span>Status</span>
-                <span>Notes</span>
+                <span>Arrived</span>
               </div>
 
               <ul className="divide-y divide-outline-variant/30">
@@ -406,11 +315,13 @@ export default function AttendancePage() {
               </ul>
             </Card>
 
-            <PaginationBar
-              meta={attendanceQuery.data.meta}
-              onPageChange={handlePageChange}
-              className="mt-6"
-            />
+            {dailyQuery.data ? (
+              <PaginationBar
+                meta={dailyQuery.data.meta}
+                onPageChange={handlePageChange}
+                className="mt-6"
+              />
+            ) : null}
           </>
         )}
       </motion.section>
@@ -418,9 +329,8 @@ export default function AttendancePage() {
   );
 }
 
-function AttendanceRow({ record }: { record: AttendanceRecord }) {
+function AttendanceRow({ record }: { record: DailyAttendanceRecord }) {
   const badge = statusBadge[record.status];
-  const sessionLabel = record.session_title ?? record.course?.title ?? "Session";
 
   return (
     <div
@@ -442,33 +352,25 @@ function AttendanceRow({ record }: { record: AttendanceRecord }) {
         </span>
       </div>
 
-      {/* Session title + course chip */}
-      <div className="min-w-0">
-        <p className="truncate text-body-md font-medium text-on-surface" title={sessionLabel}>
-          {sessionLabel}
-        </p>
-        {record.course ? (
-          <Badge variant="primary" className="mt-1.5 max-w-full">
-            <span className="min-w-0 truncate">{record.course.title}</span>
-          </Badge>
-        ) : null}
-      </div>
-
       {/* Desktop status */}
       <span className="hidden md:block">
         <Badge variant={badge.variant}>{badge.label}</Badge>
       </span>
 
-      {/* Notes */}
-      {record.notes ? (
-        <p className="truncate text-body-sm text-on-surface-variant" title={record.notes}>
-          {record.notes}
-        </p>
-      ) : (
-        <p aria-hidden="true" className="hidden text-body-sm text-outline md:block">
-          —
-        </p>
-      )}
+      <div className="flex items-center gap-2">
+        {record.arrived_at ? (
+          <span className="font-mono text-body-sm text-on-surface-variant">{record.arrived_at}</span>
+        ) : (
+          <span aria-hidden="true" className="hidden text-body-sm text-outline md:block">
+            —
+          </span>
+        )}
+        {record.corrected ? (
+          <span className="font-mono text-label-sm uppercase text-on-surface-variant/60">
+            corrected
+          </span>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -490,12 +392,8 @@ function AttendanceRowSkeleton({ withBorder }: { withBorder: boolean }) {
         </div>
         <Skeleton className="h-5 w-20 rounded-full md:hidden" />
       </div>
-      <div className="space-y-2">
-        <Skeleton className="h-5 w-3/4" />
-        <Skeleton className="h-5 w-32 rounded-full" />
-      </div>
       <Skeleton className="hidden h-5 w-20 rounded-full md:block" />
-      <Skeleton className="hidden h-4 w-2/3 md:block" />
+      <Skeleton className="hidden h-4 w-16 md:block" />
     </div>
   );
 }
