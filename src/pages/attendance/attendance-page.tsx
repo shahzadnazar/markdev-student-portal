@@ -22,9 +22,9 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAttendanceSummary, useDailyAttendance } from "@/hooks/use-engagement";
-import { formatDate, formatPercent } from "@/lib/format";
+import { formatDate, formatMoney, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { DailyAttendanceRecord, DailyAttendanceStatus } from "@/types";
+import type { AbsenceBalance, DailyAttendanceRecord, DailyAttendanceStatus } from "@/types";
 
 const PER_PAGE = 10;
 
@@ -47,6 +47,28 @@ const statusBadge: Record<
   absent: { variant: "error", label: "Absent" },
   leave: { variant: "neutral", label: "Leave" },
 };
+
+/**
+ * What the Absent card says beneath its number.
+ *
+ * Mirrors the leave counter: used out of the allowance, and what it is costing
+ * once it goes past. Every number is the server's — the allowance and the
+ * per-absence amount are admin settings, so a default here would be wrong the
+ * moment either changed.
+ */
+function absenceHint(balance: AbsenceBalance): string {
+  const counter = `${balance.used}/${balance.allowance} this month`;
+
+  if (balance.chargeable === 0) {
+    return `${counter} · within the allowance`;
+  }
+
+  if (balance.fine_total === 0) {
+    return `${counter} · ${balance.chargeable} beyond the allowance`;
+  }
+
+  return `${counter} · ${balance.chargeable} beyond the allowance`;
+}
 
 /** Shared column template for the desktop table header and rows. */
 const rowGrid = "md:grid-cols-[11rem_minmax(0,1fr)_8rem]";
@@ -202,7 +224,21 @@ export default function AttendancePage() {
             className="py-10"
           />
         ) : summaryQuery.data ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <>
+            {summaryQuery.data.absence_balance.fine_total > 0 ? (
+              <p className="mb-3 rounded-xl bg-error-container/60 px-4 py-3 text-body-sm font-medium text-on-error-container">
+                Your fine is{" "}
+                {formatMoney(
+                  summaryQuery.data.absence_balance.fine_total,
+                  summaryQuery.data.absence_balance.currency,
+                )}{" "}
+                and has been added to your fee — {summaryQuery.data.absence_balance.chargeable}{" "}
+                {summaryQuery.data.absence_balance.chargeable === 1 ? "absence" : "absences"} beyond
+                the {summaryQuery.data.absence_balance.allowance} allowed in{" "}
+                {summaryQuery.data.absence_balance.month_label}.
+              </p>
+            ) : null}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             <StatCard
               label="Attendance rate"
               value={formatPercent(summaryQuery.data.attendance_rate)}
@@ -235,7 +271,7 @@ export default function AttendancePage() {
               icon={AlertCircle}
               tone="warning"
               hintBelow
-              hint="Missed, unexcused"
+              hint={absenceHint(summaryQuery.data.absence_balance)}
             />
             <StatCard
               label="Leave"
@@ -245,7 +281,8 @@ export default function AttendancePage() {
               hintBelow
               hint="Approved leave"
             />
-          </div>
+            </div>
+          </>
         ) : null}
       </section>
 

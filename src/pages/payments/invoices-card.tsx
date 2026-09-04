@@ -158,6 +158,19 @@ function InvoiceRow({
           </p>
         ))}
 
+      {invoice.absence_fine_amount > 0 && (
+        <p className="mt-2 text-body-sm text-error">
+          Absence fine {formatMoney(invoice.absence_fine_amount, invoice.currency)} added.
+          {invoice.absence_fine_credit > 0
+            ? ` Credit for a corrected absence −${formatMoney(invoice.absence_fine_credit, invoice.currency)}.`
+            : ""}
+        </p>
+      )}
+      {invoice.absence_fine_amount === 0 && invoice.absence_fine_credit > 0 && (
+        <p className="mt-2 text-body-sm text-success">
+          Credit — corrected absence −{formatMoney(invoice.absence_fine_credit, invoice.currency)}.
+        </p>
+      )}
       {invoice.status === "past_due" && invoice.fine_amount > 0 && (
         <p className="mt-3 rounded-lg bg-error-container/60 px-3 py-2 text-body-sm text-on-error-container">
           <span className="font-semibold">Defaulter fine:</span>{" "}

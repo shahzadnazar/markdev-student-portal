@@ -23,6 +23,30 @@ export interface AttendanceSummary {
   leave_count: number;
   /** Percentage 0–100. */
   attendance_rate: number;
+  /** What this month's absences cost. Every number is the server's. */
+  absence_balance: AbsenceBalance;
+}
+
+/**
+ * A student's absences for one calendar month, and the fine they carry.
+ *
+ * The allowance and the per-absence amount are admin settings, so nothing here
+ * is computed or defaulted in the portal.
+ */
+export interface AbsenceBalance {
+  allowance: number;
+  used: number;
+  remaining: number;
+  /** Absences beyond the allowance — the ones that cost money. */
+  chargeable: number;
+  fine_per_absent: number;
+  fine_total: number;
+  /** The student's billing currency, so the portal assumes none. */
+  currency: string;
+  /** "YYYY-MM". */
+  month: string;
+  month_label: string;
+  resets_on: string;
 }
 
 export type DailyAttendanceStatus = "present" | "late" | "absent" | "leave";

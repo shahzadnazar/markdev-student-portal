@@ -77,9 +77,27 @@ export function InvoiceDialog({ invoice, siteName, onClose }: InvoiceDialogProps
               </div>
               {invoice.fine_amount > 0 && (
                 <div className="flex items-center justify-between gap-4 border-b border-outline-variant/40 pb-3">
-                  <p className="text-body-md text-error">Defaulter fine ({invoice.fine_days} days)</p>
+                  <p className="text-body-md text-error">Late-payment fine ({invoice.fine_days} days)</p>
                   <p className="font-mono text-body-md text-error">
                     {formatMoney(invoice.fine_amount, invoice.currency)}
+                  </p>
+                </div>
+              )}
+              {/* Its own line, never folded into the fee or the late-payment
+                  fine: they are different charges for different reasons. */}
+              {invoice.absence_fine_amount > 0 && (
+                <div className="flex items-center justify-between gap-4 border-b border-outline-variant/40 pb-3">
+                  <p className="text-body-md text-error">Absence fine</p>
+                  <p className="font-mono text-body-md text-error">
+                    {formatMoney(invoice.absence_fine_amount, invoice.currency)}
+                  </p>
+                </div>
+              )}
+              {invoice.absence_fine_credit > 0 && (
+                <div className="flex items-center justify-between gap-4 border-b border-outline-variant/40 pb-3">
+                  <p className="text-body-md text-success">Credit — corrected absence</p>
+                  <p className="font-mono text-body-md text-success">
+                    −{formatMoney(invoice.absence_fine_credit, invoice.currency)}
                   </p>
                 </div>
               )}

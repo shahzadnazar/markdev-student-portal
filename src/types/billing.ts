@@ -49,10 +49,14 @@ export interface Invoice {
   sequence_no: number | null;
   title: string | null;
   amount: number;
-  /** Accrued defaulter fine so far. */
+  /** Accrued late-payment fine so far. Not the absence fine. */
   fine_amount: number;
   fine_days: number;
-  /** Installment + fine — what the student actually pays. */
+  /** Fine for absences beyond the monthly allowance. */
+  absence_fine_amount: number;
+  /** Credited back when an absence was corrected after being billed. */
+  absence_fine_credit: number;
+  /** Everything above netted off — what the student actually pays. */
   payable_total: number;
   currency: string;
   status: InvoiceStatus;
