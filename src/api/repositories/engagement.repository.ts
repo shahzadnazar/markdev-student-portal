@@ -8,6 +8,7 @@ import type {
   Bookmark,
   ApplyLeavePayload,
   LeaveApplication,
+  LeaveApplicationPage,
   BookmarkableType,
   CalendarEvent,
   Certificate,
@@ -126,7 +127,7 @@ export const bookmarksRepository = {
 
 export const leavesRepository = {
   list(params: ListParams = {}) {
-    return getRaw<Paginated<LeaveApplication>>("/leaves", { params });
+    return getRaw<Paginated<LeaveApplication> & LeaveApplicationPage>("/leaves", { params });
   },
 
   apply(payload: ApplyLeavePayload) {

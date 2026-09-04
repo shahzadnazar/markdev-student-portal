@@ -356,6 +356,31 @@ export interface LeaveApplication {
   created_at: string;
 }
 
+/**
+ * A student's leave standing for one calendar month.
+ *
+ * Every number comes from the server: the allowance is an admin setting, and a
+ * copy held here would be wrong the moment it changed.
+ */
+export interface LeaveBalance {
+  allowance: number;
+  used: number;
+  remaining: number;
+  /** "YYYY-MM". */
+  month: string;
+  /** e.g. "October 2026". */
+  month_label: string;
+  /** First day of the next month — when this balance is replaced, not added to. */
+  resets_on: string;
+}
+
+export interface LeaveApplicationPage {
+  data: LeaveApplication[];
+  balance: LeaveBalance;
+  /** This month and the next two, the window the apply form can reach. */
+  balances: LeaveBalance[];
+}
+
 export interface ApplyLeavePayload {
   from_date: string;
   to_date: string;

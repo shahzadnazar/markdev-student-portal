@@ -27,7 +27,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useApplyForLeave, useLeaveApplications } from "@/hooks/use-engagement";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { LeaveStatus } from "@/types";
+import type { LeaveBalance, LeaveStatus } from "@/types";
 
 const statusBadge: Record<LeaveStatus, { variant: "warning" | "success" | "error"; label: string }> = {
   pending: { variant: "warning", label: "Pending review" },
@@ -53,6 +53,43 @@ export function LeaveSection() {
 
   const leaves = leavesQuery.data?.data ?? [];
 
+  // Every number here is the server's. The allowance is an admin setting, so a
+  // default held in the portal would be wrong from the moment it changed.
+  const balance = leavesQuery.data?.balance ?? null;
+  const balances = leavesQuery.data?.balances ?? [];
+  const outOfLeave = balance !== null && balance.remaining === 0;
+
+  /** How many days of the picked range fall in each calendar month. */
+  const daysPerMonth = (from: string, to: string): Map<string, number> => {
+    const counts = new Map<string, number>();
+    const last = new Date(`${to}T00:00:00`);
+
+    for (let day = new Date(`${from}T00:00:00`); day <= last; day.setDate(day.getDate() + 1)) {
+      const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}`;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+
+    return counts;
+  };
+
+  /**
+   * The first month the picked range would overspend.
+   *
+   * A range straddling a boundary is checked against each month it touches, so
+   * the warning can name the one that is short rather than a total that fits
+   * nowhere in particular.
+   */
+  const shortfall: LeaveBalance | null = (() => {
+    if (!fromDate || !toDate || fromDate > toDate || balances.length === 0) return null;
+
+    for (const [month, needed] of daysPerMonth(fromDate, toDate)) {
+      const monthBalance = balances.find((entry) => entry.month === month);
+      if (monthBalance && needed > monthBalance.remaining) return monthBalance;
+    }
+
+    return null;
+  })();
+
   const resetForm = () => {
     setFromDate("");
     setToDate("");
@@ -63,6 +100,11 @@ export function LeaveSection() {
   const handleSubmit = () => {
     if (!fromDate || !toDate || !reason.trim()) {
       setError("Pick the dates and tell us briefly why you'll be away.");
+      return;
+    }
+    // The server refuses this too; stopping here means the instructor never
+    // sees a request that could not be approved in full.
+    if (shortfall) {
       return;
     }
     setError(null);
@@ -95,10 +137,25 @@ export function LeaveSection() {
             Approved leave days are marked in the register and count as present.
           </CardDescription>
         </div>
-        <Button size="sm" onClick={() => setOpen(true)}>
-          <CalendarPlus aria-hidden="true" />
-          Apply for leave
-        </Button>
+        <div className="flex flex-col items-end gap-1">
+          <Button size="sm" onClick={() => setOpen(true)} disabled={outOfLeave}>
+            <CalendarPlus aria-hidden="true" />
+            Apply for leave
+          </Button>
+          {balance ? (
+            <p
+              className={cn(
+                "font-mono text-label-sm",
+                outOfLeave ? "text-error" : "text-on-surface-variant",
+              )}
+            >
+              {balance.used}/{balance.allowance}
+              {outOfLeave
+                ? ` · Monthly leave limit reached. Resets ${formatDate(balance.resets_on)}.`
+                : ` used in ${balance.month_label}`}
+            </p>
+          ) : null}
+        </div>
       </CardHeader>
       <CardContent>
         {leavesQuery.isLoading ? (
@@ -201,6 +258,13 @@ export function LeaveSection() {
                 />
               </FormField>
             </div>
+            {shortfall ? (
+              <p className="rounded-xl bg-error-container/60 px-4 py-3 text-body-sm font-medium text-on-error-container">
+                Your remaining leave limit is {shortfall.remaining}
+                {balances.length > 1 ? ` in ${shortfall.month_label}` : ""}. Shorten the
+                dates to fit before sending this.
+              </p>
+            ) : null}
             <FormField label="Reason" htmlFor="leave-reason">
               <Textarea
                 id="leave-reason"
@@ -216,7 +280,7 @@ export function LeaveSection() {
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={applyLeave.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={applyLeave.isPending}>
+            <Button onClick={handleSubmit} disabled={applyLeave.isPending || shortfall !== null}>
               {applyLeave.isPending ? (
                 <>
                   <Spinner className="text-on-primary" aria-hidden="true" />
