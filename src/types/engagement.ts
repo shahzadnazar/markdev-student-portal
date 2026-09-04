@@ -39,6 +39,9 @@ export interface DailyAttendanceRecord {
   marked_at: string | null;
   /** True when staff corrected the record after marking. */
   corrected: boolean;
+  /** The class session held that day, when there was one. */
+  session_title: string | null;
+  course: CourseRef | null;
 }
 
 export interface DailyAttendanceParams extends ListParams {

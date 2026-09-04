@@ -49,7 +49,7 @@ const statusBadge: Record<
 };
 
 /** Shared column template for the desktop table header and rows. */
-const rowGrid = "md:grid-cols-[12rem_9rem_minmax(0,1fr)]";
+const rowGrid = "md:grid-cols-[11rem_minmax(0,1fr)_8rem]";
 
 /**
  * The student's attendance, which at this academy means the daily register.
@@ -293,8 +293,8 @@ export default function AttendancePage() {
                 )}
               >
                 <span>Date</span>
+                <span>Session</span>
                 <span>Status</span>
-                <span>Arrived</span>
               </div>
 
               <ul className="divide-y divide-outline-variant/30">
@@ -352,23 +352,27 @@ function AttendanceRow({ record }: { record: DailyAttendanceRecord }) {
         </span>
       </div>
 
-      {/* Desktop status */}
-      <span className="hidden md:block">
-        <Badge variant={badge.variant}>{badge.label}</Badge>
-      </span>
-
-      <div className="flex items-center gap-2">
-        {record.arrived_at ? (
-          <span className="font-mono text-body-sm text-on-surface-variant">{record.arrived_at}</span>
+      {/* Session title + course chip */}
+      <div className="min-w-0">
+        {record.session_title ? (
+          <p className="truncate text-body-md font-medium text-on-surface" title={record.session_title}>
+            {record.session_title}
+          </p>
         ) : (
-          <span aria-hidden="true" className="hidden text-body-sm text-outline md:block">
-            —
-          </span>
+          <p className="text-body-sm text-outline">No session</p>
         )}
+        {record.course ? (
+          <Badge variant="primary" className="mt-1.5 max-w-full">
+            <span className="min-w-0 truncate">{record.course.title}</span>
+          </Badge>
+        ) : null}
+      </div>
+
+      {/* Desktop status */}
+      <div className="hidden md:block">
+        <Badge variant={badge.variant}>{badge.label}</Badge>
         {record.corrected ? (
-          <span className="font-mono text-label-sm uppercase text-on-surface-variant/60">
-            corrected
-          </span>
+          <p className="mt-1 font-mono text-label-sm uppercase text-on-surface-variant/60">corrected</p>
         ) : null}
       </div>
     </div>
@@ -392,8 +396,11 @@ function AttendanceRowSkeleton({ withBorder }: { withBorder: boolean }) {
         </div>
         <Skeleton className="h-5 w-20 rounded-full md:hidden" />
       </div>
+      <div className="space-y-2">
+        <Skeleton className="h-5 w-3/4" />
+        <Skeleton className="h-5 w-32 rounded-full" />
+      </div>
       <Skeleton className="hidden h-5 w-20 rounded-full md:block" />
-      <Skeleton className="hidden h-4 w-16 md:block" />
     </div>
   );
 }
