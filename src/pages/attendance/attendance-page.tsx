@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { format, parseISO } from "date-fns";
 import { motion } from "framer-motion";
 import { AlertCircle, CalendarDays, CalendarOff, CheckCircle2, Clock, TrendingUp, X } from "lucide-react";
@@ -63,6 +63,20 @@ export default function AttendancePage() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
+  const recordsRef = useRef<HTMLElement>(null);
+
+  /**
+   * Bring the list into view when a filter changes.
+   *
+   * The filters sit above the leave applications and the cards, so on a short
+   * screen the rows they narrow are off the bottom and the change looks like
+   * nothing happened.
+   */
+  const revealRecords = () => {
+    window.requestAnimationFrame(() => {
+      recordsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  };
 
   const filters = {
     status: status === "all" ? undefined : status,
@@ -79,6 +93,7 @@ export default function AttendancePage() {
   const handleStatusChange = (value: string) => {
     setStatus(value as StatusFilter);
     setPage(1);
+    revealRecords();
   };
 
   const clearFilters = () => {
@@ -90,7 +105,7 @@ export default function AttendancePage() {
 
   const handlePageChange = (nextPage: number) => {
     setPage(nextPage);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    revealRecords();
   };
 
   return (
@@ -98,7 +113,7 @@ export default function AttendancePage() {
       <PageHeader
         eyebrow="Learning"
         title="Attendance"
-        description="Your day-by-day record at the academy — marked at the front desk or by the biometric terminal."
+        description="Every day the academy has a record of — sessions you joined or missed, and days covered by approved leave."
       />
 
       {/* Filters — first, because they narrow everything below them. */}
@@ -137,6 +152,7 @@ export default function AttendancePage() {
                 onChange={(event) => {
                   setFrom(event.target.value);
                   setPage(1);
+                  revealRecords();
                 }}
               />
             </div>
@@ -151,6 +167,7 @@ export default function AttendancePage() {
                 onChange={(event) => {
                   setTo(event.target.value);
                   setPage(1);
+                  revealRecords();
                 }}
               />
             </div>
@@ -234,6 +251,7 @@ export default function AttendancePage() {
 
       {/* Records */}
       <motion.section
+        ref={recordsRef}
         aria-label="Attendance records"
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}

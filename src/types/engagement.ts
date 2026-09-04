@@ -27,9 +27,14 @@ export interface AttendanceSummary {
 
 export type DailyAttendanceStatus = "present" | "late" | "absent" | "leave";
 
-/** One row of the academy's daily register (front desk or biometric). */
+/**
+ * One day of the student's attendance.
+ *
+ * Merged server-side from the day register and the per-class records, which
+ * only partly overlap, so the id is the date rather than either table's key.
+ */
 export interface DailyAttendanceRecord {
-  id: number;
+  id: string;
   date: string;
   status: DailyAttendanceStatus;
   remarks: string | null;
