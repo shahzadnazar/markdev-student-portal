@@ -26,12 +26,14 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useApplyForLeave, useLeaveApplications } from "@/hooks/use-engagement";
 import { formatDate } from "@/lib/format";
+import { cn } from "@/lib/utils";
 import type { LeaveStatus } from "@/types";
 
 const statusBadge: Record<LeaveStatus, { variant: "warning" | "success" | "error"; label: string }> = {
   pending: { variant: "warning", label: "Pending review" },
   approved: { variant: "success", label: "Approved" },
-  rejected: { variant: "error", label: "Rejected" },
+  partially_approved: { variant: "warning", label: "Partly approved" },
+  rejected: { variant: "error", label: "Declined" },
 };
 
 /**
@@ -127,6 +129,23 @@ export function LeaveSection() {
                     <p className="mt-0.5 truncate text-body-sm text-on-surface-variant" title={leave.reason}>
                       {leave.reason}
                     </p>
+                    {leave.status === "partially_approved" ? (
+                      <p className="mt-1 flex flex-wrap gap-1.5">
+                        {leave.days.map((day) => (
+                          <span
+                            key={day.date}
+                            className={cn(
+                              "rounded-md px-2 py-0.5 font-mono text-label-sm",
+                              day.status === "approved"
+                                ? "bg-success-container text-on-success-container"
+                                : "bg-error-container text-on-error-container",
+                            )}
+                          >
+                            {formatDate(day.date)} {day.status === "approved" ? "approved" : "declined"}
+                          </span>
+                        ))}
+                      </p>
+                    ) : null}
                     {leave.review_note ? (
                       <p className="mt-0.5 text-body-sm text-on-surface-variant">
                         <span className="font-semibold">Note from the academy:</span> {leave.review_note}

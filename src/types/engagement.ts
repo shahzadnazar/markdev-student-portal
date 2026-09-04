@@ -332,7 +332,13 @@ export interface SearchResults {
 
 /* ---------------------------- Leave applications --------------------------- */
 
-export type LeaveStatus = "pending" | "approved" | "rejected";
+export type LeaveStatus = "pending" | "approved" | "partially_approved" | "rejected";
+
+/** The reviewer's verdict on one day of a range. */
+export interface LeaveApplicationDay {
+  date: string;
+  status: "approved" | "declined";
+}
 
 export interface LeaveApplication {
   id: number;
@@ -341,6 +347,10 @@ export interface LeaveApplication {
   days_count: number;
   reason: string;
   status: LeaveStatus;
+  /** Per day, because a range can be approved in part. Empty while pending. */
+  days: LeaveApplicationDay[];
+  approved_days: number;
+  declined_days: number;
   review_note: string | null;
   reviewed_at: string | null;
   created_at: string;
