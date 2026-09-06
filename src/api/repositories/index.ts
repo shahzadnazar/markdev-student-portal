@@ -14,6 +14,7 @@ export {
   leavesRepository,
   notificationsRepository,
   progressRepository,
+  rulesRepository,
   searchRepository,
   settingsRepository,
    lessonActivityRepository,

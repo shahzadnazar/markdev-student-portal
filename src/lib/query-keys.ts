@@ -37,6 +37,7 @@ export const qk = {
   attendanceSummary: (params: object = {}) => ["attendance", "summary", params] as const,
   attendanceDaily: (params: object = {}) => ["attendance", "daily", params] as const,
   attendanceCalendar: (params: object = {}) => ["attendance", "calendar", params] as const,
+  rules: ["rules"] as const,
 
   certificates: ["certificates"] as const,
   progress: ["progress"] as const,

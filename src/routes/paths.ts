@@ -33,6 +33,7 @@ export const paths = {
   payments: "/payments",
   profile: "/profile",
   settings: "/settings",
+  rules: "/rules",
   help: "/help",
   helpArticle: (slug: string) => `/help/articles/${slug}`,
 } as const;

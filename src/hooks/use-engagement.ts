@@ -11,6 +11,7 @@ import {
   leaderboardRepository,
   notificationsRepository,
   progressRepository,
+  rulesRepository,
   searchRepository,
   settingsRepository,
   lessonActivityRepository,
@@ -71,6 +72,21 @@ export function useAttendanceSummary(params: Pick<AttendanceParams, "course_id" 
   return useQuery({
     queryKey: qk.attendanceSummary(params),
     queryFn: () => attendanceRepository.summary(params),
+  });
+}
+
+/**
+ * The Rules & Regulations page.
+ *
+ * Held a while: the rules change a few times a year, not per page view. Every
+ * value in it is the server's, so there is nothing to recompute on the client
+ * when it does change — a refetch replaces the whole page.
+ */
+export function useRules() {
+  return useQuery({
+    queryKey: qk.rules,
+    queryFn: () => rulesRepository.get(),
+    staleTime: 30 * 60 * 1000,
   });
 }
 

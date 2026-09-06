@@ -40,6 +40,7 @@ const PaymentsPage = lazy(() => import("@/pages/payments/payments-page"));
 const ProfilePage = lazy(() => import("@/pages/profile/profile-page"));
 const SettingsPage = lazy(() => import("@/pages/settings/settings-page"));
 
+const RulesPage = lazy(() => import("@/pages/rules/rules-page"));
 const HelpCenterPage = lazy(() => import("@/pages/help/help-center-page"));
 const HelpArticlePage = lazy(() => import("@/pages/help/help-article-page"));
 
@@ -180,6 +181,10 @@ const router = createBrowserRouter([
             element: page(<SettingsPage />),
           },
 
+          {
+            path: "/rules",
+            element: page(<RulesPage />),
+          },
           {
             path: "/help",
             element: page(<HelpCenterPage />),

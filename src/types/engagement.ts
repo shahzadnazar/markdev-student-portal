@@ -82,6 +82,64 @@ export interface Holiday {
   name: string;
 }
 
+/* ------------------------------ Rules page -------------------------------- */
+
+/**
+ * The Rules & Regulations page, assembled server-side.
+ *
+ * Every sentence arrives finished and every number in it came from a setting.
+ * The portal renders these strings and holds no default for any of them — an
+ * admin changing a setting or rewording a rule changes this page with nothing
+ * redeployed, which only works if nothing here is reconstructed locally.
+ */
+export interface RuleBook {
+  sections: RuleSection[];
+  /** What one marked day is worth, out of 100 — the live settings. */
+  weights: AttendanceWeight[];
+  /** The student's own slot, or null when they are on none. */
+  slot: RulesSlot | null;
+  holidays: UpcomingHoliday[];
+  attendance_mode: "manual" | "biometric";
+  /** ISO timestamp of the last rule reword, or null if never changed. */
+  updated_at: string | null;
+}
+
+export interface RuleSection {
+  key: string;
+  title: string;
+  rules: Rule[];
+}
+
+export interface Rule {
+  /** Stable identifier, e.g. "leave.allowance". Not shown to the student. */
+  key: string;
+  /** The finished sentence. Render as-is; never parse a number out of it. */
+  text: string;
+}
+
+export interface AttendanceWeight {
+  status: "present" | "late" | "leave" | "absent";
+  label: string;
+  weight: number;
+}
+
+export interface RulesSlot {
+  name: string;
+  /** Already 12-hour, formatted by the server. */
+  starts_at: string;
+  ends_at: string;
+  days: string;
+  late_after_minutes: number;
+}
+
+export interface UpcomingHoliday {
+  /** "YYYY-MM-DD". */
+  date: string;
+  /** Already formatted in Asia/Karachi by the server. */
+  label: string;
+  name: string;
+}
+
 export interface AcademyCalendarParams {
   from?: string;
   to?: string;

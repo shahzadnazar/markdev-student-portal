@@ -23,6 +23,7 @@ import type {
   NotificationCounts,
   Paginated,
   ProgressOverview,
+  RuleBook,
   SearchResults,
   UserSettings,
   DailyAttendancePage,
@@ -54,6 +55,13 @@ export const attendanceRepository = {
   /** The working week and the holidays in a window — never assumed locally. */
   calendar(params: AcademyCalendarParams = {}) {
     return get<AcademyCalendar>("/attendance/calendar", { params });
+  },
+};
+
+export const rulesRepository = {
+  /** The whole Rules & Regulations page, finished, in one request. */
+  get() {
+    return get<RuleBook>("/rules");
   },
 };
 
