@@ -23,6 +23,12 @@ export interface AttendanceSummary {
   leave_count: number;
   /** Percentage 0–100. */
   attendance_rate: number;
+  /**
+   * Days off in this window. Listed for context only — the server keeps them
+   * out of total_sessions and out of the rate, because a day the academy was
+   * shut is not attendance and must never lower it.
+   */
+  holiday_count: number;
   /** What this month's absences cost. Every number is the server's. */
   absence_balance: AbsenceBalance;
 }
@@ -49,7 +55,37 @@ export interface AbsenceBalance {
   resets_on: string;
 }
 
-export type DailyAttendanceStatus = "present" | "late" | "absent" | "leave";
+export type DailyAttendanceStatus = "present" | "late" | "absent" | "leave" | "holiday";
+
+/**
+ * The academy's own calendar, as it applies to this student.
+ *
+ * Working days are their slot's days when they are on one, and the academy's
+ * week otherwise — that is what decides which of their days can become an
+ * absence. Both come from the server: an admin adding Eid has to reach the
+ * portal without a redeploy, so nothing here is hardcoded.
+ */
+export interface AcademyCalendar {
+  /** ISO-8601 weekday numbers, 1 = Monday. */
+  working_days: number[];
+  working_days_label: string;
+  source: "slot" | "academy";
+  slot_name: string | null;
+  holidays: Holiday[];
+  from: string;
+  to: string;
+}
+
+export interface Holiday {
+  /** "YYYY-MM-DD". */
+  date: string;
+  name: string;
+}
+
+export interface AcademyCalendarParams {
+  from?: string;
+  to?: string;
+}
 
 /**
  * One day of the student's attendance.
@@ -61,6 +97,7 @@ export interface DailyAttendanceRecord {
   id: string;
   date: string;
   status: DailyAttendanceStatus;
+  /** On a holiday this is the holiday's name, e.g. "Eid ul-Fitr". */
   remarks: string | null;
   /** Actual arrival time (HH:MM, 24h) — filled by the biometric device or front desk. */
   arrived_at: string | null;

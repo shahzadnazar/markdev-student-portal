@@ -19,6 +19,7 @@ import {
 
 import { qk } from "@/lib/query-keys";
 import type {
+  AcademyCalendarParams,
   ApplyLeavePayload,
   AttendanceParams,
   DailyAttendanceParams,
@@ -48,6 +49,21 @@ export function useDailyAttendance(params: DailyAttendanceParams = {}) {
     queryKey: qk.attendanceDaily(params),
     queryFn: () => attendanceRepository.daily(params),
     placeholderData: (previous) => previous,
+  });
+}
+
+/**
+ * The academy's working week and its holidays.
+ *
+ * Kept a long time in cache and never refetched on focus: the working week is
+ * an admin setting and holidays are dated rows, so this changes a few times a
+ * year, not per page view.
+ */
+export function useAcademyCalendar(params: AcademyCalendarParams = {}) {
+  return useQuery({
+    queryKey: qk.attendanceCalendar(params),
+    queryFn: () => attendanceRepository.calendar(params),
+    staleTime: 30 * 60 * 1000,
   });
 }
 

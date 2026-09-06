@@ -1,5 +1,7 @@
 import { destroy, get, getRaw, patch, post, put } from "@/api/client";
 import type {
+  AcademyCalendar,
+  AcademyCalendarParams,
   Announcement,
   AppNotification,
   AttendanceParams,
@@ -47,6 +49,11 @@ export const attendanceRepository = {
 
   daily(params: DailyAttendanceParams = {}) {
     return getRaw<DailyAttendancePage>("/attendance/daily", { params });
+  },
+
+  /** The working week and the holidays in a window — never assumed locally. */
+  calendar(params: AcademyCalendarParams = {}) {
+    return get<AcademyCalendar>("/attendance/calendar", { params });
   },
 };
 

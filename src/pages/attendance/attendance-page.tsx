@@ -36,16 +36,21 @@ const statusOptions: ReadonlyArray<{ value: StatusFilter; label: string }> = [
   { value: "late", label: "Late" },
   { value: "absent", label: "Absent" },
   { value: "leave", label: "Leave" },
+  { value: "holiday", label: "Holiday" },
 ];
 
 const statusBadge: Record<
   DailyAttendanceStatus,
-  { variant: "success" | "warning" | "error" | "neutral"; label: string }
+  { variant: "success" | "warning" | "error" | "neutral" | "secondary"; label: string }
 > = {
   present: { variant: "success", label: "Present" },
   late: { variant: "warning", label: "Late" },
   absent: { variant: "error", label: "Absent" },
   leave: { variant: "neutral", label: "Leave" },
+  // Deliberately its own colour rather than a shade of any of the four above:
+  // a day the academy was shut is not a verdict on the student, and it is not
+  // counted in the cards or the rate either.
+  holiday: { variant: "secondary", label: "Holiday" },
 };
 
 /**
@@ -282,6 +287,17 @@ export default function AttendancePage() {
               hint="Approved leave"
             />
             </div>
+            {summaryQuery.data.holiday_count > 0 ? (
+              // A line rather than a sixth card: the number itself is not the
+              // point, the reassurance is — a day off does not touch the rate
+              // and cannot be fined.
+              <p className="mt-3 text-body-sm text-on-surface-variant">
+                {summaryQuery.data.holiday_count}{" "}
+                {summaryQuery.data.holiday_count === 1 ? "day" : "days"} the academy was closed{" "}
+                {summaryQuery.data.holiday_count === 1 ? "is" : "are"} listed below but not counted
+                — they don't affect your rate and can't be fined.
+              </p>
+            ) : null}
           </>
         ) : null}
       </section>
@@ -407,9 +423,13 @@ function AttendanceRow({ record }: { record: DailyAttendanceRecord }) {
         </span>
       </div>
 
-      {/* Session title + course chip */}
+      {/* Session title + course chip — or, on a day off, which holiday it was */}
       <div className="min-w-0">
-        {record.session_title ? (
+        {record.status === "holiday" ? (
+          <p className="truncate text-body-md font-medium text-secondary" title={record.remarks ?? undefined}>
+            {record.remarks ?? "Academy closed"}
+          </p>
+        ) : record.session_title ? (
           <p className="truncate text-body-md font-medium text-on-surface" title={record.session_title}>
             {record.session_title}
           </p>

@@ -24,10 +24,10 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
-import { useApplyForLeave, useLeaveApplications } from "@/hooks/use-engagement";
+import { useAcademyCalendar, useApplyForLeave, useLeaveApplications } from "@/hooks/use-engagement";
 import { formatDate } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { LeaveBalance, LeaveStatus } from "@/types";
+import type { AcademyCalendar, LeaveBalance, LeaveStatus } from "@/types";
 
 const statusBadge: Record<LeaveStatus, { variant: "warning" | "success" | "error"; label: string }> = {
   pending: { variant: "warning", label: "Pending review" },
@@ -41,8 +41,33 @@ const statusBadge: Record<LeaveStatus, { variant: "warning" | "success" | "error
  * Approved days are marked as leave in the daily register and count as
  * present in the attendance rate.
  */
+/** ISO-8601 weekday, 1 = Monday, from a "YYYY-MM-DD" string. */
+function isoWeekday(date: string): number {
+  return ((new Date(`${date}T00:00:00`).getDay() + 6) % 7) + 1;
+}
+
+/**
+ * Every date in a range, inclusive, as "YYYY-MM-DD".
+ *
+ * Stepped as local dates rather than by adding milliseconds, so a daylight
+ * change cannot drop or repeat a day.
+ */
+function datesBetween(from: string, to: string): string[] {
+  const dates: string[] = [];
+  const last = new Date(`${to}T00:00:00`);
+
+  for (let day = new Date(`${from}T00:00:00`); day <= last; day.setDate(day.getDate() + 1)) {
+    dates.push(
+      `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`,
+    );
+  }
+
+  return dates;
+}
+
 export function LeaveSection() {
   const leavesQuery = useLeaveApplications();
+  const calendarQuery = useAcademyCalendar();
   const applyLeave = useApplyForLeave();
 
   const [open, setOpen] = useState(false);
@@ -59,13 +84,48 @@ export function LeaveSection() {
   const balances = leavesQuery.data?.balances ?? [];
   const outOfLeave = balance !== null && balance.remaining === 0;
 
-  /** How many days of the picked range fall in each calendar month. */
+  // The academy's own week and its dated holidays. Both are the server's:
+  // the working week is an admin setting and holidays are rows, so an academy
+  // that opens on Saturdays — or closes for Eid — must reach this form without
+  // a redeploy.
+  const calendar: AcademyCalendar | null = calendarQuery.data ?? null;
+  const holidayNames = new Map((calendar?.holidays ?? []).map((day) => [day.date, day.name]));
+
+  /**
+   * Whether a date costs the student a day of their allowance.
+   *
+   * The same rule the server applies when it writes the day rows, so the
+   * counter here and the balance it is checked against cannot disagree. Until
+   * the calendar loads nothing is excluded: over-counting warns about a range
+   * the server would accept, which is recoverable, where under-counting would
+   * send one it refuses.
+   */
+  const countsAsLeave = (date: string): boolean => {
+    if (!calendar) return true;
+    if (holidayNames.has(date)) return false;
+
+    return calendar.working_days.includes(isoWeekday(date));
+  };
+
+  /** The picked days that cost nothing, and why. */
+  const daysOff = fromDate && toDate && fromDate <= toDate
+    ? datesBetween(fromDate, toDate)
+        .filter((date) => !countsAsLeave(date))
+        .map((date) => ({ date, name: holidayNames.get(date) ?? null }))
+    : [];
+
+  const chargedDays = fromDate && toDate && fromDate <= toDate
+    ? datesBetween(fromDate, toDate).filter(countsAsLeave).length
+    : 0;
+
+  /** How many chargeable days of the picked range fall in each calendar month. */
   const daysPerMonth = (from: string, to: string): Map<string, number> => {
     const counts = new Map<string, number>();
-    const last = new Date(`${to}T00:00:00`);
 
-    for (let day = new Date(`${from}T00:00:00`); day <= last; day.setDate(day.getDate() + 1)) {
-      const key = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}`;
+    for (const date of datesBetween(from, to)) {
+      if (!countsAsLeave(date)) continue;
+
+      const key = date.slice(0, 7);
       counts.set(key, (counts.get(key) ?? 0) + 1);
     }
 
@@ -258,6 +318,22 @@ export function LeaveSection() {
                 />
               </FormField>
             </div>
+            {daysOff.length > 0 ? (
+              <p className="rounded-xl bg-surface-container px-4 py-3 text-body-sm text-on-surface-variant">
+                <span className="font-medium text-on-surface">
+                  {chargedDays} {chargedDays === 1 ? "day counts" : "days count"} against your leave
+                </span>{" "}
+                — the academy is closed on{" "}
+                {daysOff.map((day, index) => (
+                  <span key={day.date}>
+                    {index > 0 ? (index === daysOff.length - 1 ? " and " : ", ") : ""}
+                    {formatDate(day.date)}
+                    {day.name ? ` (${day.name})` : ""}
+                  </span>
+                ))}
+                , so {daysOff.length === 1 ? "it costs" : "they cost"} you nothing.
+              </p>
+            ) : null}
             {shortfall ? (
               <p className="rounded-xl bg-error-container/60 px-4 py-3 text-body-sm font-medium text-on-error-container">
                 Your remaining leave limit is {shortfall.remaining}
