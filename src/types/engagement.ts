@@ -3,7 +3,15 @@ import type { CourseRef } from "./assessments";
 
 /* ------------------------------- Attendance ------------------------------- */
 
-export type AttendanceStatus = "present" | "absent" | "late" | "excused";
+/**
+ * One row of GET /attendance — a flat list of the student's attendance days.
+ *
+ * Named for the per-class table it used to come from, which has since been
+ * folded into the daily register. The endpoint and its keys are unchanged;
+ * only the table behind them is, so a status the register knows can now appear
+ * here too. Most of the portal reads the richer /attendance/daily instead.
+ */
+export type AttendanceStatus = DailyAttendanceStatus;
 
 export interface AttendanceRecord {
   id: number;
@@ -21,6 +29,14 @@ export interface AttendanceSummary {
   late_count: number;
   /** Days covered by an approved leave application. */
   leave_count: number;
+  /**
+   * Days the academy excused without a leave application behind them.
+   *
+   * Counted, and worth the same as approved leave, but reported separately:
+   * an excused day does not spend the student's monthly leave allowance, and
+   * saying "leave" for one would be claiming it did.
+   */
+  excused_count: number;
   /** Percentage 0–100. */
   attendance_rate: number;
   /**
@@ -55,7 +71,13 @@ export interface AbsenceBalance {
   resets_on: string;
 }
 
-export type DailyAttendanceStatus = "present" | "late" | "absent" | "leave" | "holiday";
+export type DailyAttendanceStatus =
+  | "present"
+  | "late"
+  | "absent"
+  | "leave"
+  | "excused"
+  | "holiday";
 
 /**
  * The academy's own calendar, as it applies to this student.
@@ -148,8 +170,10 @@ export interface AcademyCalendarParams {
 /**
  * One day of the student's attendance.
  *
- * Merged server-side from the day register and the per-class records, which
- * only partly overlap, so the id is the date rather than either table's key.
+ * The academy keeps one attendance table, so this is a day of the register.
+ * It was merged server-side from two overlapping tables until the per-class
+ * sheet was retired; the id is still the date, which is what the unique
+ * (student, day) on the register guarantees.
  */
 export interface DailyAttendanceRecord {
   id: string;
@@ -165,7 +189,12 @@ export interface DailyAttendanceRecord {
   corrected: boolean;
   /** The class session held that day, when there was one. */
   session_title: string | null;
-  course: CourseRef | null;
+  /**
+   * Just the id and title: /attendance/daily selects those two columns and
+   * has never sent the rest of a CourseRef. Typed as the full shape until a
+   * test tried to build one, which is the sort of thing a type is for.
+   */
+  course: Pick<CourseRef, "id" | "title"> | null;
 }
 
 export interface DailyAttendanceParams extends ListParams {

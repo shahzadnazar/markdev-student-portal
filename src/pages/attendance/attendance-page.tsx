@@ -35,10 +35,11 @@ const statusOptions: ReadonlyArray<{ value: StatusFilter; label: string }> = [
   { value: "late", label: "Late" },
   { value: "absent", label: "Absent" },
   { value: "leave", label: "Leave" },
+  { value: "excused", label: "Excused" },
   { value: "holiday", label: "Holiday" },
 ];
 
-const statusBadge: Record<
+export const statusBadge: Record<
   DailyAttendanceStatus,
   { variant: "success" | "warning" | "error" | "neutral" | "secondary"; label: string }
 > = {
@@ -46,11 +47,43 @@ const statusBadge: Record<
   late: { variant: "warning", label: "Late" },
   absent: { variant: "error", label: "Absent" },
   leave: { variant: "neutral", label: "Leave" },
+  // Its own label rather than a second kind of Leave: it is worth the same
+  // half day, but it did not come out of the student's leave allowance and
+  // saying "Leave" would tell them it did.
+  excused: { variant: "neutral", label: "Excused" },
   // Deliberately its own colour rather than a shade of any of the four above:
   // a day the academy was shut is not a verdict on the student, and it is not
   // counted in the cards or the rate either.
   holiday: { variant: "secondary", label: "Holiday" },
 };
+
+/**
+ * What a row shows in its middle column.
+ *
+ * A holiday names itself — the gap where Eid was would otherwise read as
+ * missing data. Every other day shows the session it was, and says so plainly
+ * when there wasn't one rather than leaving the column blank.
+ *
+ * Pulled out of the row so it can be tested: the suite runs in node with no
+ * DOM, and this is the decision worth pinning — the session title and the
+ * course survived the merge of the two attendance tables into one, and they
+ * are the two facts the retired table contributed.
+ */
+export function sessionLabel(record: Pick<DailyAttendanceRecord, "status" | "session_title" | "remarks">): {
+  text: string;
+  muted: boolean;
+  holiday: boolean;
+} {
+  if (record.status === "holiday") {
+    return { text: record.remarks ?? "Academy closed", muted: false, holiday: true };
+  }
+
+  if (record.session_title) {
+    return { text: record.session_title, muted: false, holiday: false };
+  }
+
+  return { text: "No session", muted: true, holiday: false };
+}
 
 /**
  * What the Absent card says beneath its number.
@@ -80,9 +113,11 @@ const rowGrid = "md:grid-cols-[11rem_minmax(0,1fr)_8rem]";
 /**
  * The student's attendance, which at this academy means the daily register.
  *
- * Everything on this page reads that one table. The cards used to count
- * per-class AttendanceRecords instead, which approved leave never touches, so
- * the Leave card read zero on a page whose every listed day said Leave.
+ * Everything on this page reads that one table — and there is only one table
+ * to read now, since the per-class attendance sheet was folded into the
+ * register. The cards used to count those per-class rows, which approved leave
+ * never touches, so the Leave card read zero on a page whose every listed day
+ * said Leave.
  */
 export default function AttendancePage() {
   const [status, setStatus] = useState<StatusFilter>("all");
@@ -296,6 +331,19 @@ export default function AttendancePage() {
               hint="Approved leave"
             />
             </div>
+            {summaryQuery.data.excused_count > 0 ? (
+              // A line rather than a sixth card, like the holiday note below:
+              // rare, and what the student needs is the reassurance about
+              // their allowance rather than the number.
+              <p className="mt-3 text-body-sm text-on-surface-variant">
+                {summaryQuery.data.excused_count}{" "}
+                {summaryQuery.data.excused_count === 1 ? "day was" : "days were"} excused by the
+                academy. {summaryQuery.data.excused_count === 1 ? "It counts" : "They count"} the
+                same as approved leave toward your rate, but{" "}
+                {summaryQuery.data.excused_count === 1 ? "it did" : "they did"} not come out of your
+                leave allowance.
+              </p>
+            ) : null}
             {summaryQuery.data.holiday_count > 0 ? (
               // A line rather than a sixth card: the number itself is not the
               // point, the reassurance is — a day off does not touch the rate
@@ -411,6 +459,7 @@ export default function AttendancePage() {
 
 function AttendanceRow({ record }: { record: DailyAttendanceRecord }) {
   const badge = statusBadge[record.status];
+  const session = sessionLabel(record);
 
   return (
     <div
@@ -434,16 +483,18 @@ function AttendanceRow({ record }: { record: DailyAttendanceRecord }) {
 
       {/* Session title + course chip — or, on a day off, which holiday it was */}
       <div className="min-w-0">
-        {record.status === "holiday" ? (
-          <p className="truncate text-body-md font-medium text-secondary" title={record.remarks ?? undefined}>
-            {record.remarks ?? "Academy closed"}
-          </p>
-        ) : record.session_title ? (
-          <p className="truncate text-body-md font-medium text-on-surface" title={record.session_title}>
-            {record.session_title}
-          </p>
+        {session.muted ? (
+          <p className="text-body-sm text-outline">{session.text}</p>
         ) : (
-          <p className="text-body-sm text-outline">No session</p>
+          <p
+            className={cn(
+              "truncate text-body-md font-medium",
+              session.holiday ? "text-secondary" : "text-on-surface",
+            )}
+            title={session.text}
+          >
+            {session.text}
+          </p>
         )}
         {record.course ? (
           <Badge variant="primary" className="mt-1.5 max-w-full">
