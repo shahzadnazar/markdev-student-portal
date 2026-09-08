@@ -63,6 +63,25 @@ export function formatDateRange(
     : `${format(start, DATE_PATTERN)} – ${format(end, DATE_PATTERN)}`;
 }
 
+/**
+ * Monday-first weekday names, taken from a real week.
+ *
+ * Derived rather than written down, so there is no list of day names in the
+ * app to drift, be localised wrongly, or be mistaken for a statement about
+ * which days the academy is open — that is the academy_working_days setting,
+ * and it comes from the API.
+ */
+export function weekdayHeadings(): Array<{ key: string; short: string; full: string }> {
+  const monday = new Date(2024, 0, 1); // A Monday.
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const day = new Date(monday);
+    day.setDate(monday.getDate() + index);
+
+    return { key: format(day, "EEE"), short: format(day, "EEEEE"), full: format(day, "EEEE") };
+  });
+}
+
 /** "Mon" — for compact day strips and table cells. */
 export function formatWeekdayShort(value: string | Date): string {
   return format(toDate(value), "EEE");

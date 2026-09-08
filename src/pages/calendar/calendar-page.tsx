@@ -32,11 +32,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCalendar } from "@/hooks/use-engagement";
-import { formatDate, formatDateTime, formatMonthLong } from "@/lib/format";
+import { formatDate, formatDateTime, formatMonthLong, weekdayHeadings } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { CalendarEvent, CalendarEventType } from "@/types";
 
-const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+/** Monday-first, derived rather than written down — see format.ts. */
+const WEEKDAYS = weekdayHeadings();
 
 const typeConfig: Record<
   CalendarEventType,
@@ -171,7 +172,7 @@ export default function CalendarPage() {
           >
             <Card className="p-4 md:p-6">
               <div className="grid grid-cols-7 gap-px" role="grid" aria-label={formatMonthLong(month)}>
-                {WEEKDAYS.map((weekday) => (
+                {WEEKDAYS.map(({ key: weekday }) => (
                   <div
                     key={weekday}
                     role="columnheader"

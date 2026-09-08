@@ -456,7 +456,15 @@ export type LeaveStatus = "pending" | "approved" | "partially_approved" | "rejec
 /** The reviewer's verdict on one day of a range. */
 export interface LeaveApplicationDay {
   date: string;
-  status: "approved" | "declined";
+  /**
+   * Pending until someone rules on it.
+   *
+   * A row exists from the moment the student applies — that reservation is what
+   * stops two requests each looking affordable — so a day of an unreviewed
+   * application arrives here as "pending", not absent. This was typed as only
+   * the two settled states, which was never what the API sent.
+   */
+  status: "pending" | "approved" | "declined";
 }
 
 export interface LeaveApplication {

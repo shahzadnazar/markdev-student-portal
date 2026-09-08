@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { leaveCost } from "./leave-cost";
+import { classifyDay, leaveCost, monthsSpanned } from "./leave-cost";
+import type { LeaveHold } from "./leave-cost";
 import type { AcademyCalendar, LeaveBalance } from "@/types";
 
 /**
@@ -144,5 +145,112 @@ describe("leaveCost", () => {
     expect(leaveCost("", "", calendar(), []).chargedDays).toBe(0);
     // A backwards range is not a range.
     expect(leaveCost("2026-09-18", "2026-09-14", calendar(), []).months).toEqual([]);
+  });
+});
+
+/**
+ * What the calendar draws, and what the summary counts, are one answer.
+ *
+ * Nothing here writes a weekend or a holiday date: the working week and the
+ * holidays are the API's, so an academy open on Saturdays is classified from
+ * what it sent rather than from an assumption in the portal.
+ */
+describe("classifyDay", () => {
+  const EID = { date: "2026-09-17", name: "Eid ul-Fitr" };
+
+  it("names a holiday and marks it free", () => {
+    const facts = classifyDay("2026-09-17", calendar([EID]));
+
+    expect(facts.kind).toBe("holiday");
+    expect(facts.holidayName).toBe("Eid ul-Fitr");
+  });
+
+  it("keeps a weekend distinct from a holiday", () => {
+    // 19 Sep 2026 is a Saturday, outside a Mon–Fri week.
+    const weekend = classifyDay("2026-09-19", calendar([EID]));
+
+    expect(weekend.kind).toBe("non-working");
+    expect(weekend.holidayName).toBeNull();
+    expect(weekend.kind).not.toBe(classifyDay("2026-09-17", calendar([EID])).kind);
+  });
+
+  it("follows the academy's own week rather than assuming Sat and Sun", () => {
+    const openSaturdays: ReturnType<typeof calendar> = {
+      ...calendar(),
+      working_days: [1, 2, 3, 4, 5, 6],
+    };
+
+    expect(classifyDay("2026-09-19", openSaturdays).kind).toBe("working");
+    // Sunday is still closed for that academy.
+    expect(classifyDay("2026-09-20", openSaturdays).kind).toBe("non-working");
+  });
+
+  it("marks a day another application already holds", () => {
+    const holds = new Map<string, LeaveHold>([
+      ["2026-09-14", "approved"],
+      ["2026-09-15", "pending"],
+    ]);
+
+    expect(classifyDay("2026-09-14", calendar(), holds).kind).toBe("on-leave");
+    expect(classifyDay("2026-09-15", calendar(), holds).leaveStatus).toBe("pending");
+    expect(classifyDay("2026-09-16", calendar(), holds).kind).toBe("working");
+  });
+
+  it("does not let a hold turn a free day into a used one", () => {
+    // A weekend the student happens to have applied for is still a weekend:
+    // it costs nothing either way.
+    const holds = new Map<string, LeaveHold>([["2026-09-19", "approved"]]);
+
+    expect(classifyDay("2026-09-19", calendar(), holds).kind).toBe("non-working");
+  });
+
+  it("agrees with what the cost summary charged for", () => {
+    const cal = calendar([EID]);
+    const cost = leaveCost("2026-09-14", "2026-09-20", cal, []);
+    const free = new Set(cost.freeDays.map((day) => day.date));
+
+    for (const date of ["2026-09-17", "2026-09-19", "2026-09-20"]) {
+      expect(free.has(date)).toBe(true);
+      expect(["holiday", "non-working"]).toContain(classifyDay(date, cal).kind);
+    }
+
+    for (const date of ["2026-09-14", "2026-09-15", "2026-09-16", "2026-09-18"]) {
+      expect(free.has(date)).toBe(false);
+      expect(classifyDay(date, cal).kind).toBe("working");
+    }
+
+    expect(cost.chargedDays).toBe(4);
+  });
+});
+
+describe("monthsSpanned", () => {
+  it("gives one month for a range inside one", () => {
+    expect(monthsSpanned("2026-09-14", "2026-09-18")).toEqual(["2026-09"]);
+  });
+
+  it("gives both months for a range across a boundary", () => {
+    expect(monthsSpanned("2026-09-14", "2026-10-06")).toEqual(["2026-09", "2026-10"]);
+  });
+
+  it("gives three for the widest range the form allows", () => {
+    // 60 days from the end of September reaches the end of November.
+    expect(monthsSpanned("2026-09-30", "2026-11-29")).toEqual(["2026-09", "2026-10", "2026-11"]);
+  });
+
+  it("crosses a year end", () => {
+    expect(monthsSpanned("2026-12-20", "2027-01-05")).toEqual(["2026-12", "2027-01"]);
+  });
+
+  it("gives nothing for an empty or backwards range", () => {
+    expect(monthsSpanned("", "")).toEqual([]);
+    expect(monthsSpanned("2026-10-06", "2026-09-14")).toEqual([]);
+  });
+
+  it("lists the same months the balances are shown for", () => {
+    // The calendar draws a grid per month from this, and the summary lists a
+    // balance row per month from leaveCost — they must not disagree.
+    const cost = leaveCost("2026-09-14", "2026-10-06", calendar(), [AUGUST, SEPTEMBER]);
+
+    expect(monthsSpanned("2026-09-14", "2026-10-06")).toEqual(cost.months.map((entry) => entry.month));
   });
 });

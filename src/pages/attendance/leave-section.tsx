@@ -25,8 +25,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useAcademyCalendar, useApplyForLeave, useLeaveApplications } from "@/hooks/use-engagement";
+import { LeaveRangeCalendar } from "./leave-calendar";
 import { leaveCost } from "./leave-cost";
-import type { LeaveCost } from "./leave-cost";
+import type { LeaveCost, LeaveHold } from "./leave-cost";
 import { formatDate, formatDateRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AcademyCalendar, LeaveStatus } from "@/types";
@@ -87,6 +88,25 @@ export function LeaveSection() {
   // a redeploy.
   const calendar: AcademyCalendar | null = calendarQuery.data ?? null;
   const hasRange = Boolean(fromDate && toDate && fromDate <= toDate);
+
+  /**
+   * Dates already spoken for by another application.
+   *
+   * Pending and approved days both hold — the same two the server counts
+   * against the allowance — while a declined day is free again. The server
+   * refuses a request overlapping one of these outright, so the calendar marks
+   * them unavailable rather than letting a student pick into a rejection.
+   *
+   * Read from the applications already on screen, which is the most recent
+   * page: anything inside the 60-day window this form reaches is on it.
+   */
+  const leaveHolds = new Map<string, LeaveHold>(
+    leaves.flatMap((application) =>
+      application.days
+        .filter((day) => day.status === "pending" || day.status === "approved")
+        .map((day) => [day.date, day.status as LeaveHold] as const),
+    ),
+  );
 
   // One implementation of what a range costs, shared with its tests. The form
   // only renders the answer; it decides none of it.
@@ -191,17 +211,20 @@ export function LeaveSection() {
                     </p>
                     {leave.status === "partially_approved" ? (
                       <p className="mt-1 flex flex-wrap gap-1.5">
+                        {/* Only reached once every day has been ruled on, but
+                            named per state rather than "approved or else",
+                            which would label a pending day declined. */}
                         {leave.days.map((day) => (
                           <span
                             key={day.date}
                             className={cn(
                               "rounded-md px-2 py-0.5 font-mono text-label-sm",
-                              day.status === "approved"
-                                ? "bg-success-container text-on-success-container"
-                                : "bg-error-container text-on-error-container",
+                              day.status === "approved" && "bg-success-container text-on-success-container",
+                              day.status === "declined" && "bg-error-container text-on-error-container",
+                              day.status === "pending" && "bg-warning-container text-on-warning-container",
                             )}
                           >
-                            {formatDate(day.date)} {day.status === "approved" ? "approved" : "declined"}
+                            {formatDate(day.date)} {day.status}
                           </span>
                         ))}
                       </p>
@@ -227,7 +250,9 @@ export function LeaveSection() {
           if (!next) resetForm();
         }}
       >
-        <DialogContent>
+        {/* Wider than the default so the summary and the calendar sit side
+            by side instead of stacking into a longer scroll. */}
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Apply for leave</DialogTitle>
             <DialogDescription>
@@ -289,9 +314,19 @@ export function LeaveSection() {
 
             {/* Directly above Submit: the reason the button is disabled sits
                 next to the button it disables, rather than being separated
-                from it by the reason box. */}
+                from it by the reason box. Two columns where there is room —
+                which also makes the dialog shorter than the stacked version,
+                so a laptop scrolls less, not more — and stacked below sm. */}
             {hasRange ? (
-              <LeaveCostSummary from={fromDate} to={toDate} cost={cost} />
+              <div className="grid gap-4 sm:grid-cols-[minmax(0,1fr)_16rem] sm:items-start">
+                <LeaveCostSummary from={fromDate} to={toDate} cost={cost} />
+                <LeaveRangeCalendar
+                  from={fromDate}
+                  to={toDate}
+                  calendar={calendar}
+                  holds={leaveHolds}
+                />
+              </div>
             ) : null}
           </div>
 
@@ -334,7 +369,6 @@ export function LeaveSection() {
  * portal's own.
  */
 function LeaveCostSummary({ from, to, cost }: { from: string; to: string; cost: LeaveCost }) {
-  const [showDays, setShowDays] = useState(false);
   const { chargedDays, freeDays, freeWeekends, freeHolidays, months, shortMonths, overLimit } = cost;
 
   // "9 weekend days", "2 public holidays", or both — a range containing Eid
@@ -362,30 +396,11 @@ function LeaveCostSummary({ from, to, cost }: { from: string; to: string; cost: 
         <p className="mt-1 text-body-sm text-on-surface-variant">
           {/* Agreement follows the total, not the first part: "1 public holiday
               is free and does not count", "9 weekend days are free and do not". */}
+          {/* Which days they are is answered by the calendar beside this,
+              where they are marked — a list here would say it twice. */}
           {freeParts.join(" and ")} in this range{" "}
-          {freeDays.length === 1 ? "is free and does not count" : "are free and do not count"}.{" "}
-          {/* Behind a toggle rather than inline: nine dates in the middle of a
-              sentence hide the number that matters. */}
-          <button
-            type="button"
-            onClick={() => setShowDays((open) => !open)}
-            aria-expanded={showDays}
-            className="font-medium text-primary underline-offset-2 hover:underline"
-          >
-            {showDays ? "Hide days" : "Which days?"}
-          </button>
+          {freeDays.length === 1 ? "is free and does not count" : "are free and do not count"}.
         </p>
-      ) : null}
-
-      {showDays ? (
-        <ul className="mt-2 space-y-0.5 border-l-2 border-outline-variant/40 pl-3">
-          {freeDays.map((day) => (
-            <li key={day.date} className="text-body-sm text-on-surface-variant">
-              {formatDate(day.date)}
-              {day.name ? ` — ${day.name}` : ""}
-            </li>
-          ))}
-        </ul>
       ) : null}
 
       {/* Every month the range touches, not just the first one that is short:
