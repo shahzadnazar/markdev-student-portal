@@ -32,6 +32,21 @@ import { formatDate, formatDateRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AcademyCalendar, LeaveStatus } from "@/types";
 
+/**
+ * What the reviewer's note is called, given what they decided.
+ *
+ * A note is required the moment any day is turned down, so on a decline —
+ * whole or partial — it is the reason and is named as one. On a full approval
+ * it is optional and is just a note, so calling it a decline reason there
+ * would tell a student they were refused when they were not.
+ */
+const reviewNoteLabel: Record<LeaveStatus, string> = {
+  rejected: "Reason for decline",
+  partially_approved: "Reason for the declined days",
+  approved: "Note from the academy",
+  pending: "Note from the academy",
+};
+
 const statusBadge: Record<LeaveStatus, { variant: "warning" | "success" | "error"; label: string }> = {
   pending: { variant: "warning", label: "Pending review" },
   approved: { variant: "success", label: "Approved" },
@@ -231,7 +246,8 @@ export function LeaveSection() {
                     ) : null}
                     {leave.review_note ? (
                       <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                        <span className="font-semibold">Note from the academy:</span> {leave.review_note}
+                        <span className="font-semibold">{reviewNoteLabel[leave.status]}:</span>{" "}
+                        {leave.review_note}
                       </p>
                     ) : null}
                   </div>
