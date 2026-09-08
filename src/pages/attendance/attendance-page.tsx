@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { format, parseISO } from "date-fns";
 import { motion } from "framer-motion";
 import { AlertCircle, CalendarDays, CalendarOff, CheckCircle2, Clock, TrendingUp, X } from "lucide-react";
 import { EmptyState } from "@/components/shared/empty-state";
@@ -22,7 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAttendanceSummary, useDailyAttendance } from "@/hooks/use-engagement";
-import { formatDate, formatMoney, formatPercent } from "@/lib/format";
+import { formatDate, formatMoney, formatPercent, formatWeekdayShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { AbsenceBalance, DailyAttendanceRecord, DailyAttendanceStatus } from "@/types";
 
@@ -181,7 +180,13 @@ export default function AttendancePage() {
                   setPage(1);
                   revealRecords();
                 }}
+                aria-describedby="attendance-from-reading"
               />
+              {/* The field draws its own text in the browser's locale, which no
+                  page can restyle; this is the unambiguous reading of it. */}
+              <p id="attendance-from-reading" className="text-label-sm text-on-surface-variant">
+                {from ? formatDate(from) : "Any start date"}
+              </p>
             </div>
 
             <div className="w-full space-y-1.5 md:w-44">
@@ -196,7 +201,11 @@ export default function AttendancePage() {
                   setPage(1);
                   revealRecords();
                 }}
+                aria-describedby="attendance-to-reading"
               />
+              <p id="attendance-to-reading" className="text-label-sm text-on-surface-variant">
+                {to ? formatDate(to) : "Any end date"}
+              </p>
             </div>
 
             {hasFilters ? (
@@ -415,7 +424,7 @@ function AttendanceRow({ record }: { record: DailyAttendanceRecord }) {
         <div>
           <p className="text-body-sm font-medium text-on-surface">{formatDate(record.date)}</p>
           <p className="mt-0.5 font-mono text-label-sm text-on-surface-variant uppercase">
-            {format(parseISO(record.date), "EEE")}
+            {formatWeekdayShort(record.date)}
           </p>
         </div>
         <span className="md:hidden">

@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { format, parseISO } from "date-fns";
+import { parseISO } from "date-fns";
 import {
   CartesianGrid,
   Line,
@@ -18,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 
+import { formatMonthLong, formatMonthShort } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { ProgressPoint } from "@/types";
 
@@ -54,7 +55,7 @@ function ProgressTooltip({
   return (
     <div className="rounded-xl bg-white px-4 py-3 shadow-elevated ring-1 ring-outline-variant/40">
       <p className="font-mono text-label-sm uppercase text-on-surface-variant">
-        {format(parseISO(point.month), "MMMM yyyy")}
+        {formatMonthLong(point.month)}
       </p>
 
       {/* Every series is a share of what was available to this student that
@@ -167,7 +168,7 @@ export function LearningProgressCard({
                   tickFormatter={(value: string) => {
                     const date = parseISO(value);
 
-                    return format(date, "MMM");
+                    return formatMonthShort(date);
                   }}
                   tick={{
                     fill: chart.tick,

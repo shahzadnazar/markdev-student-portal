@@ -26,12 +26,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useCourses, useCourseModules } from "@/hooks/use-catalog";
-import {
-  formatCompact,
-  formatDuration,
-  formatPercent,
-  initials,
-} from "@/lib/format";
+import { formatCompact, formatDuration, formatMonthShort, formatPercent, formatWeekdayShort, initials } from "@/lib/format";
 import { paths } from "@/routes/paths";
 import type { LessonSummary } from "@/types";
 
@@ -830,15 +825,11 @@ function weekDays() {
 
     return {
       key: date.toISOString(),
-      weekday: date
-        .toLocaleDateString("en-US", {
-          weekday: "short",
-        })
-        .toUpperCase(),
+      // Through format.ts, not toLocaleDateString: one definition of how a
+      // date reads in this app, and no dependence on the browser's locale.
+      weekday: formatWeekdayShort(date).toUpperCase(),
       day: date.getDate(),
-      month: date.toLocaleDateString("en-US", {
-        month: "short",
-      }),
+      month: formatMonthShort(date),
     };
   });
 }

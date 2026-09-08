@@ -4,24 +4,78 @@ function toDate(value: string | Date): Date {
   return typeof value === "string" ? parseISO(value) : value;
 }
 
-/** "Jan 12, 2026" */
+/**
+ * The one date pattern this app shows: day first, month named.
+ *
+ * "9 Aug 2026", never 08/09/2026 and never 09/08/2026. A numeric date is
+ * ambiguous in both directions — a reader expecting mm/dd and a reader
+ * expecting dd/mm see two different days and neither can tell which was meant.
+ * A student picked a 34-day leave range because of exactly that. Naming the
+ * month removes the ambiguity outright rather than betting on the reader's
+ * expectation.
+ *
+ * Day-first is also the order these readers use, and it matches the 12-hour
+ * AM/PM decision already made for times: show people what they read locally.
+ */
+const DATE_PATTERN = "d MMM yyyy";
+
+/** "9 Aug 2026" */
 export function formatDate(value: string | Date | null | undefined): string {
   if (!value) return "—";
-  return format(toDate(value), "MMM d, yyyy");
+  return format(toDate(value), DATE_PATTERN);
 }
 
-/** "Jan 12, 2026 · 4:30 PM" */
+/** "9 Aug 2026 · 4:30 PM" — 12-hour, as everywhere else. */
 export function formatDateTime(value: string | Date | null | undefined): string {
   if (!value) return "—";
-  return format(toDate(value), "MMM d, yyyy · h:mm a");
+  return format(toDate(value), `${DATE_PATTERN} · h:mm a`);
 }
 
-/** "Today", "Yesterday" or "Jan 12, 2026" */
+/** "Today", "Yesterday" or "9 Aug 2026" */
 export function formatDayLabel(value: string | Date): string {
   const date = toDate(value);
   if (isToday(date)) return "Today";
   if (isYesterday(date)) return "Yesterday";
-  return format(date, "MMM d, yyyy");
+  return format(date, DATE_PATTERN);
+}
+
+/**
+ * "9 Aug 2026" for one day, "9 Aug – 11 Sep 2026" for a range.
+ *
+ * The year is written once when both ends share it, which is what makes a
+ * range readable; a range crossing new year keeps both.
+ */
+export function formatDateRange(
+  from: string | Date | null | undefined,
+  to: string | Date | null | undefined,
+): string {
+  if (!from || !to) return "—";
+
+  const start = toDate(from);
+  const end = toDate(to);
+
+  if (format(start, "yyyy-MM-dd") === format(end, "yyyy-MM-dd")) {
+    return format(start, DATE_PATTERN);
+  }
+
+  return format(start, "yyyy") === format(end, "yyyy")
+    ? `${format(start, "d MMM")} – ${format(end, DATE_PATTERN)}`
+    : `${format(start, DATE_PATTERN)} – ${format(end, DATE_PATTERN)}`;
+}
+
+/** "Mon" — for compact day strips and table cells. */
+export function formatWeekdayShort(value: string | Date): string {
+  return format(toDate(value), "EEE");
+}
+
+/** "Aug" — a month on its own is never ambiguous, but it lives here too. */
+export function formatMonthShort(value: string | Date): string {
+  return format(toDate(value), "MMM");
+}
+
+/** "August 2026" */
+export function formatMonthLong(value: string | Date): string {
+  return format(toDate(value), "MMMM yyyy");
 }
 
 /** "3 hours ago" */

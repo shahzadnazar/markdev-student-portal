@@ -24,7 +24,7 @@ import {
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useSubmitFeePayment } from "@/hooks/use-billing";
-import { formatMoney } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { BillingOverview, Invoice } from "@/types";
 
@@ -114,6 +114,7 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
   });
 
   const receipt = form.watch("receipt") as File | undefined;
+  const paymentDate = form.watch("payment_date");
   const idsKey = invoices?.map((entry) => entry.id).join(",") ?? "";
 
   // Configured accounts (JazzCash, bank …) win over the legacy free-form
@@ -527,8 +528,14 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
                     id="fee-date"
                     type="date"
                     max={new Date().toISOString().slice(0, 10)}
+                    aria-describedby="fee-date-reading"
                     {...form.register("payment_date")}
                   />
+                  {/* The field's own text is the browser's locale; this is the
+                      unambiguous reading of what was picked. */}
+                  <p id="fee-date-reading" className="mt-1 text-label-sm text-on-surface-variant">
+                    {paymentDate ? formatDate(paymentDate) : "Pick the date you paid"}
+                  </p>
                 </FormField>
                 <FormField
                   label="Payer name (optional)"

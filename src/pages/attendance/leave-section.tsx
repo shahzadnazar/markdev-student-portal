@@ -25,9 +25,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useAcademyCalendar, useApplyForLeave, useLeaveApplications } from "@/hooks/use-engagement";
-import { formatDate } from "@/lib/format";
+import { leaveCost } from "./leave-cost";
+import type { LeaveCost } from "./leave-cost";
+import { formatDate, formatDateRange } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { AcademyCalendar, LeaveBalance, LeaveStatus } from "@/types";
+import type { AcademyCalendar, LeaveStatus } from "@/types";
 
 const statusBadge: Record<LeaveStatus, { variant: "warning" | "success" | "error"; label: string }> = {
   pending: { variant: "warning", label: "Pending review" },
@@ -41,29 +43,24 @@ const statusBadge: Record<LeaveStatus, { variant: "warning" | "success" | "error
  * Approved days are marked as leave in the daily register and count as
  * present in the attendance rate.
  */
-/** ISO-8601 weekday, 1 = Monday, from a "YYYY-MM-DD" string. */
-function isoWeekday(date: string): number {
-  return ((new Date(`${date}T00:00:00`).getDay() + 6) % 7) + 1;
+/** "YYYY-MM-DD" for a date this many days from today, in local time. */
+function isoDay(offsetDays = 0): string {
+  const day = new Date();
+  day.setDate(day.getDate() + offsetDays);
+
+  return `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
 }
 
 /**
- * Every date in a range, inclusive, as "YYYY-MM-DD".
+ * The window the API accepts: from today, up to 60 days ahead.
  *
- * Stepped as local dates rather than by adding milliseconds, so a daylight
- * change cannot drop or repeat a day.
+ * Mirrored onto the pickers so a student cannot choose a date the server would
+ * refuse. It also keeps the range inside the months the API serves balances
+ * for, so every month shown below has a real limit beside it rather than a
+ * shrug.
  */
-function datesBetween(from: string, to: string): string[] {
-  const dates: string[] = [];
-  const last = new Date(`${to}T00:00:00`);
-
-  for (let day = new Date(`${from}T00:00:00`); day <= last; day.setDate(day.getDate() + 1)) {
-    dates.push(
-      `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`,
-    );
-  }
-
-  return dates;
-}
+const EARLIEST_LEAVE_DAY = isoDay(0);
+const LATEST_LEAVE_DAY = isoDay(60);
 
 export function LeaveSection() {
   const leavesQuery = useLeaveApplications();
@@ -89,66 +86,12 @@ export function LeaveSection() {
   // that opens on Saturdays — or closes for Eid — must reach this form without
   // a redeploy.
   const calendar: AcademyCalendar | null = calendarQuery.data ?? null;
-  const holidayNames = new Map((calendar?.holidays ?? []).map((day) => [day.date, day.name]));
+  const hasRange = Boolean(fromDate && toDate && fromDate <= toDate);
 
-  /**
-   * Whether a date costs the student a day of their allowance.
-   *
-   * The same rule the server applies when it writes the day rows, so the
-   * counter here and the balance it is checked against cannot disagree. Until
-   * the calendar loads nothing is excluded: over-counting warns about a range
-   * the server would accept, which is recoverable, where under-counting would
-   * send one it refuses.
-   */
-  const countsAsLeave = (date: string): boolean => {
-    if (!calendar) return true;
-    if (holidayNames.has(date)) return false;
-
-    return calendar.working_days.includes(isoWeekday(date));
-  };
-
-  /** The picked days that cost nothing, and why. */
-  const daysOff = fromDate && toDate && fromDate <= toDate
-    ? datesBetween(fromDate, toDate)
-        .filter((date) => !countsAsLeave(date))
-        .map((date) => ({ date, name: holidayNames.get(date) ?? null }))
-    : [];
-
-  const chargedDays = fromDate && toDate && fromDate <= toDate
-    ? datesBetween(fromDate, toDate).filter(countsAsLeave).length
-    : 0;
-
-  /** How many chargeable days of the picked range fall in each calendar month. */
-  const daysPerMonth = (from: string, to: string): Map<string, number> => {
-    const counts = new Map<string, number>();
-
-    for (const date of datesBetween(from, to)) {
-      if (!countsAsLeave(date)) continue;
-
-      const key = date.slice(0, 7);
-      counts.set(key, (counts.get(key) ?? 0) + 1);
-    }
-
-    return counts;
-  };
-
-  /**
-   * The first month the picked range would overspend.
-   *
-   * A range straddling a boundary is checked against each month it touches, so
-   * the warning can name the one that is short rather than a total that fits
-   * nowhere in particular.
-   */
-  const shortfall: LeaveBalance | null = (() => {
-    if (!fromDate || !toDate || fromDate > toDate || balances.length === 0) return null;
-
-    for (const [month, needed] of daysPerMonth(fromDate, toDate)) {
-      const monthBalance = balances.find((entry) => entry.month === month);
-      if (monthBalance && needed > monthBalance.remaining) return monthBalance;
-    }
-
-    return null;
-  })();
+  // One implementation of what a range costs, shared with its tests. The form
+  // only renders the answer; it decides none of it.
+  const cost = leaveCost(fromDate, toDate, calendar, balances);
+  const overLimit = cost.overLimit;
 
   const resetForm = () => {
     setFromDate("");
@@ -164,7 +107,7 @@ export function LeaveSection() {
     }
     // The server refuses this too; stopping here means the instructor never
     // sees a request that could not be approved in full.
-    if (shortfall) {
+    if (overLimit) {
       return;
     }
     setError(null);
@@ -305,42 +248,35 @@ export function LeaveSection() {
                   id="leave-from"
                   type="date"
                   value={fromDate}
+                  min={EARLIEST_LEAVE_DAY}
+                  max={LATEST_LEAVE_DAY}
                   onChange={(event) => setFromDate(event.target.value)}
+                  aria-describedby="leave-from-reading"
                 />
+                {/* The field's own text is drawn by the browser in its locale —
+                    08/09/2026 on an en-US browser — and no page can restyle it.
+                    So the unambiguous reading sits right under it, which is
+                    what a student checks before submitting. */}
+                <p id="leave-from-reading" className="mt-1 text-label-sm text-on-surface-variant">
+                  {fromDate ? formatDate(fromDate) : "Pick a start date"}
+                </p>
               </FormField>
               <FormField label="To" htmlFor="leave-to">
                 <Input
                   id="leave-to"
                   type="date"
                   value={toDate}
-                  min={fromDate || undefined}
+                  min={fromDate || EARLIEST_LEAVE_DAY}
+                  max={LATEST_LEAVE_DAY}
                   onChange={(event) => setToDate(event.target.value)}
+                  aria-describedby="leave-to-reading"
                 />
+                <p id="leave-to-reading" className="mt-1 text-label-sm text-on-surface-variant">
+                  {toDate ? formatDate(toDate) : "Pick an end date"}
+                </p>
               </FormField>
             </div>
-            {daysOff.length > 0 ? (
-              <p className="rounded-xl bg-surface-container px-4 py-3 text-body-sm text-on-surface-variant">
-                <span className="font-medium text-on-surface">
-                  {chargedDays} {chargedDays === 1 ? "day counts" : "days count"} against your leave
-                </span>{" "}
-                — the academy is closed on{" "}
-                {daysOff.map((day, index) => (
-                  <span key={day.date}>
-                    {index > 0 ? (index === daysOff.length - 1 ? " and " : ", ") : ""}
-                    {formatDate(day.date)}
-                    {day.name ? ` (${day.name})` : ""}
-                  </span>
-                ))}
-                , so {daysOff.length === 1 ? "it costs" : "they cost"} you nothing.
-              </p>
-            ) : null}
-            {shortfall ? (
-              <p className="rounded-xl bg-error-container/60 px-4 py-3 text-body-sm font-medium text-on-error-container">
-                Your remaining leave limit is {shortfall.remaining}
-                {balances.length > 1 ? ` in ${shortfall.month_label}` : ""}. Shorten the
-                dates to fit before sending this.
-              </p>
-            ) : null}
+
             <FormField label="Reason" htmlFor="leave-reason">
               <Textarea
                 id="leave-reason"
@@ -350,13 +286,20 @@ export function LeaveSection() {
                 placeholder="e.g. Family wedding out of the city"
               />
             </FormField>
+
+            {/* Directly above Submit: the reason the button is disabled sits
+                next to the button it disables, rather than being separated
+                from it by the reason box. */}
+            {hasRange ? (
+              <LeaveCostSummary from={fromDate} to={toDate} cost={cost} />
+            ) : null}
           </div>
 
           <DialogFooter>
             <Button variant="ghost" onClick={() => setOpen(false)} disabled={applyLeave.isPending}>
               Cancel
             </Button>
-            <Button onClick={handleSubmit} disabled={applyLeave.isPending || shortfall !== null}>
+            <Button onClick={handleSubmit} disabled={applyLeave.isPending || overLimit}>
               {applyLeave.isPending ? (
                 <>
                   <Spinner className="text-on-primary" aria-hidden="true" />
@@ -373,5 +316,110 @@ export function LeaveSection() {
         </DialogContent>
       </Dialog>
     </Card>
+  );
+}
+
+
+/**
+ * What a picked range costs, immediately above the Submit button.
+ *
+ * Two separate facts, on two separate lines, cost first: the days that count,
+ * then the days that do not. They used to share one sentence — "25 days count
+ * against your leave — the academy is closed on ... so they cost you nothing" —
+ * which reads as though the 25 were the free ones, with nine dates in between
+ * burying the only number that decides anything.
+ *
+ * Every figure is the server's. The month balances come from the API and the
+ * free days from the academy calendar it serves; nothing here is a rule of the
+ * portal's own.
+ */
+function LeaveCostSummary({ from, to, cost }: { from: string; to: string; cost: LeaveCost }) {
+  const [showDays, setShowDays] = useState(false);
+  const { chargedDays, freeDays, freeWeekends, freeHolidays, months, shortMonths, overLimit } = cost;
+
+  // "9 weekend days", "2 public holidays", or both — a range containing Eid
+  // must not have it called a weekend.
+  const freeParts = [
+    freeWeekends > 0 ? `${freeWeekends} weekend ${freeWeekends === 1 ? "day" : "days"}` : null,
+    freeHolidays > 0 ? `${freeHolidays} public ${freeHolidays === 1 ? "holiday" : "holidays"}` : null,
+  ].filter(Boolean) as string[];
+
+  return (
+    <div
+      className={cn(
+        "rounded-xl px-4 py-3",
+        overLimit ? "bg-error-container/60" : "bg-surface-container",
+      )}
+    >
+      <p className="text-body-sm font-medium text-on-surface">
+        {chargedDays === 0
+          ? "This request uses no leave days."
+          : `This request uses ${chargedDays} leave ${chargedDays === 1 ? "day" : "days"}.`}{" "}
+        <span className="font-normal text-on-surface-variant">{formatDateRange(from, to)}</span>
+      </p>
+
+      {freeParts.length > 0 ? (
+        <p className="mt-1 text-body-sm text-on-surface-variant">
+          {/* Agreement follows the total, not the first part: "1 public holiday
+              is free and does not count", "9 weekend days are free and do not". */}
+          {freeParts.join(" and ")} in this range{" "}
+          {freeDays.length === 1 ? "is free and does not count" : "are free and do not count"}.{" "}
+          {/* Behind a toggle rather than inline: nine dates in the middle of a
+              sentence hide the number that matters. */}
+          <button
+            type="button"
+            onClick={() => setShowDays((open) => !open)}
+            aria-expanded={showDays}
+            className="font-medium text-primary underline-offset-2 hover:underline"
+          >
+            {showDays ? "Hide days" : "Which days?"}
+          </button>
+        </p>
+      ) : null}
+
+      {showDays ? (
+        <ul className="mt-2 space-y-0.5 border-l-2 border-outline-variant/40 pl-3">
+          {freeDays.map((day) => (
+            <li key={day.date} className="text-body-sm text-on-surface-variant">
+              {formatDate(day.date)}
+              {day.name ? ` — ${day.name}` : ""}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {/* Every month the range touches, not just the first one that is short:
+          shortening to fit September only to be refused by August is exactly
+          what naming one month causes. */}
+      {months.length > 0 ? (
+        <ul className="mt-2.5 space-y-1">
+          {months.map((entry) => (
+            <li
+              key={entry.month}
+              className={cn(
+                "flex flex-wrap items-baseline justify-between gap-x-3 text-body-sm",
+                entry.short ? "font-medium text-on-error-container" : "text-on-surface-variant",
+              )}
+            >
+              <span>{entry.label}</span>
+              <span>
+                {entry.needed} {entry.needed === 1 ? "day" : "days"} needed
+                {entry.balance ? ` · ${entry.balance.remaining} left` : ""}
+                {entry.short ? " — over the limit" : ""}
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
+      {overLimit ? (
+        <p className="mt-2.5 text-body-sm font-medium text-on-error-container">
+          {shortMonths.length === 1
+            ? `${shortMonths[0]!.label} is short.`
+            : `${shortMonths.map((entry) => entry.label).join(" and ")} are both short.`}{" "}
+          Shorten the dates to fit before sending this.
+        </p>
+      ) : null}
+    </div>
   );
 }

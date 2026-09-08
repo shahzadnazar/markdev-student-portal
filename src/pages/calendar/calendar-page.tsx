@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCalendar } from "@/hooks/use-engagement";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatDateTime, formatMonthLong } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { CalendarEvent, CalendarEventType } from "@/types";
 
@@ -143,7 +143,7 @@ export default function CalendarPage() {
                 <ChevronLeft className="size-5" aria-hidden="true" />
               </Button>
               <span className="min-w-36 text-center font-display text-body-lg font-semibold text-on-surface">
-                {format(month, "MMMM yyyy")}
+                {formatMonthLong(month)}
               </span>
               <Button variant="ghost" size="icon" onClick={() => changeMonth(1)} aria-label="Next month">
                 <ChevronRight className="size-5" aria-hidden="true" />
@@ -170,7 +170,7 @@ export default function CalendarPage() {
             transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
           >
             <Card className="p-4 md:p-6">
-              <div className="grid grid-cols-7 gap-px" role="grid" aria-label={format(month, "MMMM yyyy")}>
+              <div className="grid grid-cols-7 gap-px" role="grid" aria-label={formatMonthLong(month)}>
                 {WEEKDAYS.map((weekday) => (
                   <div
                     key={weekday}
@@ -311,7 +311,7 @@ function EventRow({ event }: { event: CalendarEvent }) {
       <div className="min-w-0 flex-1">
         <p className="truncate text-body-sm font-semibold text-on-surface">{event.title}</p>
         <p className="mt-0.5 flex flex-wrap items-center gap-x-2 font-mono text-label-sm text-on-surface-variant">
-          {format(parseISO(event.starts_at), "MMM d · h:mm a")}
+          {formatDateTime(event.starts_at)}
           {event.course && <span className="truncate">· {event.course.title}</span>}
         </p>
       </div>

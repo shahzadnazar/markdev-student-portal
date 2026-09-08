@@ -3,12 +3,14 @@
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "MarkDev LMS — Student Portal. Learn • Build • Grow",
+  "description": "MarkDev LMS \u2014 Student Portal. Learn \u2022 Build \u2022 Grow",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@fontsource-variable/hanken-grotesk": "^5.2.5",
@@ -54,6 +56,7 @@
     "@vitejs/plugin-react": "^4.4.0",
     "tailwindcss": "^4.1.4",
     "typescript": "~5.8.2",
-    "vite": "^6.3.4"
+    "vite": "^6.3.4",
+    "vitest": "^5.0.0"
   }
 }
