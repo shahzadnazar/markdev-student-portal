@@ -22,6 +22,9 @@ import { PanelLeftClose } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { paths } from "@/routes/paths";
 import { cn } from "@/lib/utils";
+import { initials } from "@/lib/format";
+import { useAuth } from "@/context/auth-context";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { BrandWordmark } from "./brand-mark";
 
 interface NavItem {
@@ -96,6 +99,8 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onNavigate, className, collapsed = false, onToggleCollapse }: SidebarProps) {
+  const { user } = useAuth();
+
   return (
     <aside
       className={cn(
@@ -198,6 +203,64 @@ export function Sidebar({ onNavigate, className, collapsed = false, onToggleColl
           </div>
         ))}
       </nav>
+
+      {/* Current student — a link to their own profile.
+
+          The sidebar already lists Profile under Account, and the topbar
+          avatar opens it too. This is the third door on purpose: the name and
+          role at the foot of a sidebar reads as clickable, and on the admin
+          side it now is, so leaving this one inert would be the odd one out.
+          It carries no id — the profile page reads whoever is signed in. */}
+      <NavLink
+        to={paths.profile}
+        onClick={onNavigate}
+        aria-label="Your profile"
+        title={collapsed ? "Your profile" : undefined}
+        className={({ isActive }) =>
+          cn(
+            "group relative flex shrink-0 items-center border-t border-primary/10 px-6 py-4 transition-colors duration-150",
+            "focus-visible:ring-4 focus-visible:ring-primary/25 focus-visible:outline-none focus-visible:ring-inset",
+            collapsed ? "justify-center gap-0 px-2" : "gap-3",
+            isActive ? "bg-primary/[0.06]" : "hover:bg-surface-ice",
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            {/* The same 4px bar the nav items use, so the footer reads as part
+                of the same list rather than a separate thing that highlights. */}
+            <span
+              aria-hidden="true"
+              className={cn(
+                "absolute top-3 bottom-3 left-0 w-1 rounded-r-full bg-primary transition-opacity",
+                isActive ? "opacity-100" : "opacity-0",
+              )}
+            />
+            <Avatar className="size-9 shrink-0">
+              <AvatarImage src={user?.avatar_url ?? undefined} alt="" />
+              <AvatarFallback>{initials(user?.name)}</AvatarFallback>
+            </Avatar>
+            {collapsed ? null : (
+              <span className="min-w-0 leading-tight">
+                <span
+                  className={cn(
+                    "block truncate text-body-sm font-semibold",
+                    isActive ? "text-primary" : "text-on-surface",
+                  )}
+                >
+                  {user?.name}
+                </span>
+                {/* The account's own roles, not a hardcoded "Student" — the
+                    admin sidebar shows the same field, and a label that is
+                    right by assumption is wrong the day it is not. */}
+                <span className="block truncate font-mono text-label-sm text-outline uppercase">
+                  {user?.roles?.join(", ") || "member"}
+                </span>
+              </span>
+            )}
+          </>
+        )}
+      </NavLink>
     </aside>
   );
 }
