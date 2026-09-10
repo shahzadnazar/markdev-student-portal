@@ -25,6 +25,7 @@ import { paths } from "@/routes/paths";
 import type { Question, QuizAnswerPayload, QuizAttempt, SubmitQuizAttemptPayload } from "@/types";
 import { QuestionCard, type QuestionAnswer } from "./question-card";
 import { QuizTimer } from "./quiz-timer";
+import { useAttemptActivity } from "./use-attempt-activity";
 
 /**
  * Immersive quiz-taking screen — rendered outside the app shell so the
@@ -130,6 +131,12 @@ export default function QuizTakePage() {
     toast.error("Time is up — submitting your answers");
     handleSubmit("timeout");
   }, [handleSubmit]);
+
+  // Records tab switches for the instructor. Deliberately placed after the
+  // submit handler and before nothing: it returns no state, renders no UI and
+  // is never awaited, so it cannot affect the timer, the answers or the
+  // submission. The student sees nothing at any point.
+  useAttemptActivity(quizId, attempt?.id ?? null, attempt !== null && !submittedRef.current);
 
   // Once the attempt is running, the browser back button (and any in-app
   // navigation) is blocked until the quiz is submitted — leaving mid-attempt
