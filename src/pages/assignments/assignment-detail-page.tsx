@@ -50,11 +50,11 @@ const sectionMotion = (delay: number) => ({
 /**
  * The server's own limit for a submission, in bytes.
  *
- * SubmitAssignmentRequest is ['required','file','max:10240'] — 10 MB — and the
- * chip must say that number, not a rounder one. Named here so the two move
- * together the day the rule changes.
+ * SubmitAssignmentRequest is ['required','file','max:5120'] — the 5 MB
+ * attachment limit — and the chip must say that number, not a rounder one.
+ * Named here so the two move together the day the rule changes.
  */
-const SUBMISSION_MAX_BYTES = 10240 * 1024;
+const SUBMISSION_MAX_BYTES = 5120 * 1024;
 
 export default function AssignmentDetailPage() {
   const { assignmentId = "" } = useParams();
@@ -393,13 +393,16 @@ function SubmissionFormCard({
             label="Attachment"
             htmlFor="file"
             error={errors.file?.message}
-            hint="One file — this is the work your instructor will grade."
+            hint="One file — this is the work your instructor will grade. A .zip is fine."
           >
-            {/* The server rule is ['required','file','max:10240'] (9bed5dd).
-                The zone says required and the max chip is that same 10 MB, so
+            {/* The server rule is ['required','file','max:5120'] (9bed5dd).
+                The zone says required and the max chip is that same 5 MB, so
                 the control cannot make an obligation look optional — and the
                 submit below still refuses without a file whatever the zone
-                shows. */}
+                shows. No mimes on the server, so the chip stays "Any file" —
+                naming a list would be narrower than what is accepted, and a
+                zip of a project is already allowed. The hint says so, because
+                "any file" does not answer a student wondering about archives. */}
             <Dropzone
               id="file"
               maxBytes={SUBMISSION_MAX_BYTES}

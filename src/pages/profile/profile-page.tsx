@@ -24,7 +24,8 @@ import { formatDate, initials } from "@/lib/format";
 import type { User } from "@/types";
 
 /**
- * UpdateAvatarRequest is `['required','image','max:2048']` — 2048 KB.
+ * UpdateAvatarRequest is `['required','image','max:1024']` — the 1 MB image
+ * limit. `image` also refuses an archive, so there is nothing to add here.
  *
  * The photo badge is deliberately NOT a Dropzone. That component is a labelled
  * dashed zone with type and size chips, for a file that sits in a form until
@@ -34,7 +35,7 @@ import type { User } from "@/types";
  * same function the zones use, so "too big" and "wrong type" read the same
  * everywhere and neither drifts from the server on its own.
  */
-const MAX_AVATAR_BYTES = 2048 * 1024;
+const MAX_AVATAR_BYTES = 1024 * 1024;
 
 // const profileSchema = z.object({
 //   name: z.string().trim().min(2, "Your name must be at least 2 characters"),

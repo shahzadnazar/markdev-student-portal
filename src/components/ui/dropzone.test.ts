@@ -199,9 +199,20 @@ describe("the assignment submission stays required", () => {
   });
 
   it("sizes the chip from the server's own limit", () => {
-    // SubmitAssignmentRequest is max:10240 — kilobytes — so the constant is
-    // that number, not a rounder one someone liked the look of.
-    expect(page).toContain("const SUBMISSION_MAX_BYTES = 10240 * 1024");
+    // SubmitAssignmentRequest is max:5120 — kilobytes — so the constant is
+    // that number, not a rounder one someone liked the look of. 5 MB is the
+    // "other files" limit: this field has no mimes list, so it takes anything
+    // including an archive.
+    expect(page).toContain("const SUBMISSION_MAX_BYTES = 5120 * 1024");
+  });
+
+  it("tells the student an archive is allowed, since the chip cannot", () => {
+    // The chip reads "Any file", which is accurate — the server has no mimes
+    // list — but it does not answer someone wondering whether a .zip of their
+    // project counts. Naming a type list instead would be NARROWER than what
+    // the server takes, which is the worse error.
+    expect(page).toContain(".zip is fine");
+    expect(page).not.toMatch(/<Dropzone[\s\S]*?acceptLabel/);
   });
 });
 
@@ -272,7 +283,62 @@ describe("the profile photo badge", () => {
     expect(page).not.toContain("<Dropzone");
   });
 
-  it("matches UpdateAvatarRequest's max:2048", () => {
-    expect(page).toContain("const MAX_AVATAR_BYTES = 2048 * 1024");
+  it("matches UpdateAvatarRequest's max:1024", () => {
+    // An image field, so the 1 MB image limit.
+    expect(page).toContain("const MAX_AVATAR_BYTES = 1024 * 1024");
+  });
+});
+
+describe("the two size limits, as the portal states them", () => {
+  /**
+   * Images 1 MB, everything else 5 MB — decided by what a field ACCEPTS.
+   *
+   * The receipt is the field that had to be decided rather than derived: it
+   * takes images AND pdf, and splitting it (1 MB for a JPG, 5 for a PDF)
+   * would refuse most real receipts, which are 2-4 MB phone photos of a bank
+   * slip. One limit for the whole field. The server tests for all of this are
+   * in the API suite; these pin the numbers the CLIENT shows, because a chip
+   * out of step with the rule is the lie the drop zone exists to prevent.
+   */
+  const IMAGE_MAX_BYTES = 1024 * 1024;
+  const OTHER_MAX_BYTES = 5120 * 1024;
+
+  const read = (path: string) => readFileSync(new URL(path, import.meta.url), "utf8");
+
+  it("gives the avatar the image limit", () => {
+    expect(read("../../pages/profile/profile-page.tsx")).toContain(
+      `const MAX_AVATAR_BYTES = ${IMAGE_MAX_BYTES / 1024} * 1024`,
+    );
+  });
+
+  it("gives the assignment submission the other-files limit", () => {
+    expect(read("../../pages/assignments/assignment-detail-page.tsx")).toContain(
+      `const SUBMISSION_MAX_BYTES = ${OTHER_MAX_BYTES / 1024} * 1024`,
+    );
+  });
+
+  it("gives the whole fee receipt one limit, not one per type", () => {
+    const dialog = read("../../pages/payments/fee-receipt-dialog.tsx");
+
+    expect(dialog).toContain(`const MAX_RECEIPT_BYTES = ${OTHER_MAX_BYTES / 1024} * 1024`);
+    // One constant for the field. A second, image-only threshold here would
+    // be the split this decision rejected.
+    expect(dialog).not.toMatch(/MAX_RECEIPT_IMAGE|IMAGE_MAX|imageMaxBytes/);
+  });
+
+  it("keeps every client threshold at one of the two limits", () => {
+    // A third number appearing anywhere is a field that drifted out of the
+    // policy — which is how "images 1 MB, files 5 MB" quietly becomes six
+    // different sizes.
+    for (const path of [
+      "../../pages/profile/profile-page.tsx",
+      "../../pages/assignments/assignment-detail-page.tsx",
+      "../../pages/payments/fee-receipt-dialog.tsx",
+    ]) {
+      const code = read(path).replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+      for (const [, kb] of code.matchAll(/MAX_[A-Z_]*BYTES = (\d+) \* 1024/g)) {
+        expect([IMAGE_MAX_BYTES / 1024, OTHER_MAX_BYTES / 1024]).toContain(Number(kb));
+      }
+    }
   });
 });
