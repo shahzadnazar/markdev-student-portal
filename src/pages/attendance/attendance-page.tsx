@@ -11,14 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { PaginationBar } from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAttendanceSummary, useDailyAttendance } from "@/hooks/use-engagement";
 import { formatDate, formatMoney, formatPercent, formatWeekdayShort } from "@/lib/format";
@@ -27,10 +21,10 @@ import type { AbsenceBalance, DailyAttendanceRecord, DailyAttendanceStatus } fro
 
 const PER_PAGE = 10;
 
-type StatusFilter = DailyAttendanceStatus | "all";
-
-const statusOptions: ReadonlyArray<{ value: StatusFilter; label: string }> = [
-  { value: "all", label: "All statuses" },
+// No "all" row any more: ticking nothing IS all, and an explicit option for
+// it would be a second way to say the same thing that the Select all row in
+// the dropdown already says better.
+const statusOptions: ReadonlyArray<{ value: DailyAttendanceStatus; label: string }> = [
   { value: "present", label: "Present" },
   { value: "late", label: "Late" },
   { value: "absent", label: "Absent" },
@@ -120,7 +114,7 @@ const rowGrid = "md:grid-cols-[11rem_minmax(0,1fr)_8rem]";
  * said Leave.
  */
 export default function AttendancePage() {
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [status, setStatus] = useState<DailyAttendanceStatus[]>([]);
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [page, setPage] = useState(1);
@@ -140,7 +134,9 @@ export default function AttendancePage() {
   };
 
   const filters = {
-    status: status === "all" ? undefined : status,
+    // Empty is left off the request entirely rather than sent as [], so the
+    // server sees "no filter" and not "match nothing".
+    status: status.length > 0 ? status : undefined,
     from: from || undefined,
     to: to || undefined,
   };
@@ -148,17 +144,17 @@ export default function AttendancePage() {
   const summaryQuery = useAttendanceSummary({ from: filters.from, to: filters.to });
   const dailyQuery = useDailyAttendance({ ...filters, page, per_page: PER_PAGE });
 
-  const hasFilters = status !== "all" || from !== "" || to !== "";
+  const hasFilters = status.length > 0 || from !== "" || to !== "";
   const records = dailyQuery.data?.data ?? [];
 
-  const handleStatusChange = (value: string) => {
-    setStatus(value as StatusFilter);
+  const handleStatusChange = (value: string[]) => {
+    setStatus(value as DailyAttendanceStatus[]);
     setPage(1);
     revealRecords();
   };
 
   const clearFilters = () => {
-    setStatus("all");
+    setStatus([]);
     setFrom("");
     setTo("");
     setPage(1);
@@ -189,18 +185,14 @@ export default function AttendancePage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-end">
             <div className="w-full space-y-1.5 md:w-48">
               <Label htmlFor="attendance-status">Status</Label>
-              <Select value={status} onValueChange={handleStatusChange}>
-                <SelectTrigger id="attendance-status">
-                  <SelectValue placeholder="All statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOptions.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <MultiSelect
+                label="Filter attendance by status"
+                className="w-full"
+                placeholder="All statuses"
+                options={statusOptions}
+                value={status}
+                onChange={handleStatusChange}
+              />
             </div>
 
             <div className="w-full space-y-1.5 md:w-44">

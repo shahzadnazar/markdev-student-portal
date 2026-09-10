@@ -1,5 +1,5 @@
 import * as CheckboxPrimitive from "@radix-ui/react-checkbox";
-import { Check } from "lucide-react";
+import { Check, Minus } from "lucide-react";
 import type * as React from "react";
 
 import { cn } from "@/lib/utils";
@@ -14,12 +14,19 @@ function Checkbox({
         "peer size-5 shrink-0 rounded-sm border border-outline-variant bg-white transition-colors duration-150",
         "disabled:cursor-not-allowed disabled:opacity-50",
         "data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-on-primary",
+        // Radix sets this state for checked="indeterminate" and announces it
+        // as aria-checked="mixed" on its own; it only needed a look.
+        "data-[state=indeterminate]:border-primary data-[state=indeterminate]:bg-primary data-[state=indeterminate]:text-on-primary",
         className,
       )}
       {...props}
     >
       <CheckboxPrimitive.Indicator className="flex items-center justify-center text-current">
-        <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />
+        {props.checked === "indeterminate" ? (
+          <Minus className="size-3.5" strokeWidth={3} aria-hidden="true" />
+        ) : (
+          <Check className="size-3.5" strokeWidth={3} aria-hidden="true" />
+        )}
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>
   );

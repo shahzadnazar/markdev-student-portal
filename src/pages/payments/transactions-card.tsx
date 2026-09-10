@@ -8,14 +8,8 @@ import { ErrorState } from "@/components/shared/error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { MultiSelect } from "@/components/ui/multi-select";
 import { PaginationBar } from "@/components/ui/pagination";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useTransactions } from "@/hooks/use-billing";
@@ -24,8 +18,6 @@ import { cn } from "@/lib/utils";
 import type { PaymentMethodType, Transaction, TransactionStatus } from "@/types";
 
 const PER_PAGE = 8;
-
-type StatusFilter = TransactionStatus | "all";
 
 const methodIcons: Record<PaymentMethodType, LucideIcon> = {
   card: CreditCard,
@@ -37,14 +29,26 @@ const methodIcons: Record<PaymentMethodType, LucideIcon> = {
 
 const statusConfig = transactionStatusConfig;
 
+// No "all" row: ticking nothing is all, and the Select all row in the dropdown
+// says it better than a second option competing with it.
+const statusOptions: ReadonlyArray<{ value: TransactionStatus; label: string }> = [
+  { value: "pending", label: "Under review" },
+  { value: "success", label: "Verified" },
+  { value: "rejected", label: "Rejected" },
+  { value: "failed", label: "Failed" },
+  { value: "refunded", label: "Refunded" },
+];
+
 export function TransactionsCard({ currency }: { currency: string }) {
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [status, setStatus] = useState<TransactionStatus[]>([]);
   const [page, setPage] = useState(1);
 
   const transactionsQuery = useTransactions({
     page,
     per_page: PER_PAGE,
-    status: status === "all" ? undefined : status,
+    // Left off entirely when empty, so the server sees no filter rather than
+    // an empty set to match against.
+    status: status.length > 0 ? status : undefined,
   });
 
   const transactions = transactionsQuery.data?.data ?? [];
@@ -64,25 +68,17 @@ export function TransactionsCard({ currency }: { currency: string }) {
               Tracking all transactions for the current academic year.
             </p>
           </div>
-          <Select
+          <MultiSelect
+            label="Filter payments by status"
+            className="w-40"
+            placeholder="All statuses"
+            options={statusOptions}
             value={status}
-            onValueChange={(value) => {
-              setStatus(value as StatusFilter);
+            onChange={(value) => {
+              setStatus(value as TransactionStatus[]);
               setPage(1);
             }}
-          >
-            <SelectTrigger className="w-40" aria-label="Filter by status">
-              <SelectValue placeholder="All statuses" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All statuses</SelectItem>
-              <SelectItem value="pending">Under review</SelectItem>
-              <SelectItem value="success">Verified</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-              <SelectItem value="failed">Failed</SelectItem>
-              <SelectItem value="refunded">Refunded</SelectItem>
-            </SelectContent>
-          </Select>
+          />
         </div>
 
         {transactionsQuery.isLoading ? (
@@ -108,9 +104,9 @@ export function TransactionsCard({ currency }: { currency: string }) {
         ) : transactions.length === 0 ? (
           <EmptyState
             icon={ReceiptText}
-            title={status === "all" ? "No transactions yet" : "No matching transactions"}
+            title={status.length === 0 ? "No transactions yet" : "No matching transactions"}
             description={
-              status === "all"
+              status.length === 0
                 ? "Payments you make will appear here with their receipts."
                 : "Try a different status filter."
             }

@@ -146,7 +146,8 @@ export interface SubmitFeePayload {
 }
 
 export interface TransactionListParams extends ListParams {
-  status?: TransactionStatus;
+  /** Several at once. Empty or absent means no filter, never "match nothing". */
+  status?: TransactionStatus[];
   from?: string;
   to?: string;
 }

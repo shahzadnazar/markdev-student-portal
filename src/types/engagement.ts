@@ -200,7 +200,8 @@ export interface DailyAttendanceRecord {
 export interface DailyAttendanceParams extends ListParams {
   from?: string;
   to?: string;
-  status?: DailyAttendanceStatus;
+  /** Several at once. Empty or absent means no filter, never "match nothing". */
+  status?: DailyAttendanceStatus[];
 }
 
 export interface DailyAttendancePage {
