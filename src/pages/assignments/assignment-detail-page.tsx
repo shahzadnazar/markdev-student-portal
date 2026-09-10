@@ -1,5 +1,3 @@
-import type { ChangeEvent } from "react";
-import { useRef } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import {
@@ -10,8 +8,6 @@ import {
   Download,
   FileText,
   Send,
-  Upload,
-  X,
 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router-dom";
@@ -33,6 +29,7 @@ import {
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dropzone } from "@/components/ui/dropzone";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useAssignment, useSubmitAssignment } from "@/hooks/use-assessments";
@@ -49,6 +46,15 @@ const sectionMotion = (delay: number) => ({
   animate: { opacity: 1, y: 0 },
   transition: { duration: 0.35, delay, ease: "easeOut" as const },
 });
+
+/**
+ * The server's own limit for a submission, in bytes.
+ *
+ * SubmitAssignmentRequest is ['required','file','max:10240'] — 10 MB — and the
+ * chip must say that number, not a rounder one. Named here so the two move
+ * together the day the rule changes.
+ */
+const SUBMISSION_MAX_BYTES = 10240 * 1024;
 
 export default function AssignmentDetailPage() {
   const { assignmentId = "" } = useParams();
@@ -291,7 +297,6 @@ function SubmissionFormCard({
   assignment: Assignment;
   mutation: ReturnType<typeof useSubmitAssignment>;
 }) {
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const isOverdue = assignment.status === "overdue";
   const isResubmission = assignment.status === "returned";
 
@@ -310,14 +315,11 @@ function SubmissionFormCard({
 
   const file = watch("file");
 
-  const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0] ?? null;
+  // The zone hands back a File or null; the form field is the single source
+  // of truth either way, so the zod refine below still decides whether the
+  // submit is allowed to leave.
+  const setFile = (selected: File | null) => {
     setValue("file", selected, { shouldValidate: isSubmitted });
-  };
-
-  const clearFile = () => {
-    setValue("file", null, { shouldValidate: isSubmitted });
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const onSubmit = handleSubmit((values) => {
@@ -334,7 +336,6 @@ function SubmissionFormCard({
                 : "Your work has been submitted. Good luck!",
           );
           reset();
-          if (fileInputRef.current) fileInputRef.current.value = "";
         },
         onError: (error) => {
           if (error instanceof ApiError) {
@@ -394,47 +395,20 @@ function SubmissionFormCard({
             error={errors.file?.message}
             hint="One file — this is the work your instructor will grade."
           >
-            <input
-              ref={fileInputRef}
+            {/* The server rule is ['required','file','max:10240'] (9bed5dd).
+                The zone says required and the max chip is that same 10 MB, so
+                the control cannot make an obligation look optional — and the
+                submit below still refuses without a file whatever the zone
+                shows. */}
+            <Dropzone
               id="file"
-              type="file"
-              className="sr-only"
-              aria-invalid={errors.file ? true : undefined}
-              aria-describedby={errors.file ? "file-error" : undefined}
-              onChange={handleFileChange}
+              maxBytes={SUBMISSION_MAX_BYTES}
+              file={file}
+              onFile={setFile}
+              required
+              invalid={Boolean(errors.file)}
+              describedBy={errors.file ? "file-error" : undefined}
             />
-            {file ? (
-              <div className="flex items-center gap-3 rounded-xl border border-outline-variant/60 bg-surface-ice px-4 py-3">
-                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                  <FileText className="size-4 text-primary" aria-hidden="true" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body-sm font-medium text-on-surface">{file.name}</p>
-                  <p className="font-mono text-label-sm text-on-surface-variant">
-                    {formatBytes(file.size)}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="size-8 shrink-0"
-                  onClick={clearFile}
-                  aria-label="Remove the attached file"
-                >
-                  <X aria-hidden="true" />
-                </Button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-outline-variant px-4 py-6 text-body-sm text-on-surface-variant transition-colors duration-150 hover:border-primary/50 hover:bg-surface-ice hover:text-primary"
-              >
-                <Upload className="size-4" aria-hidden="true" />
-                Choose a file to attach
-              </button>
-            )}
           </FormField>
 
           <Button type="submit" size="lg" className="w-full" disabled={mutation.isPending}>
