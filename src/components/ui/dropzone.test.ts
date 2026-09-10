@@ -67,16 +67,14 @@ describe("rejectionReason", () => {
 
 describe("dropzone wiring", () => {
   const source = readFileSync(new URL("./dropzone.tsx", import.meta.url), "utf8");
-
-  /**
-   * The same source with its comments taken out.
-   *
-   * Counting elements has to read the JSX only. This component's docblock
-   * spells out WHY there is one input and one label, so a naive count of
-   * "<input" in the raw file counts the explanation too and the guard fails
-   * on correct code — which is how guards get deleted.
-   */
+  /** Code only — the comments here name the very lines these guards forbid. */
   const jsx = source.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  // `jsx` above is the comments-stripped source. Counting elements, and
+  // forbidding a line, both have to read the code only: this component's
+  // docblock spells out why there is one input and why the drop assigns a
+  // single-file list, so a guard reading the raw file matches its own
+  // explanation and passes on broken code — which is how guards get deleted.
 
   it("keeps a genuine file input, not a decorated div", () => {
     expect(source).toContain('type="file"');
@@ -100,9 +98,30 @@ describe("dropzone wiring", () => {
     expect(source).toContain("has-[:focus-visible]:ring");
   });
 
-  it("puts a dropped file onto the real input", () => {
-    // Otherwise a form posting without JavaScript would carry nothing.
-    expect(source).toContain("inputRef.current.files = event.dataTransfer.files");
+  it("puts the dropped file onto the real input, and only that one", () => {
+    // Two things at once. Without the assignment a form posting with no
+    // JavaScript would carry nothing. Assigning event.dataTransfer.files
+    // whole was the other half of the bug: this zone holds ONE file, so
+    // dropping two left two on the input while the card showed one —
+    // measured on the fee receipt. The input is what a no-JS submit posts,
+    // so the input and the card disagreeing is not cosmetic.
+    expect(jsx).toContain("const one = new DataTransfer()");
+    expect(jsx).toContain("one.items.add(dropped)");
+    expect(jsx).toContain("inputRef.current.files = one.files");
+    expect(jsx).not.toContain("inputRef.current.files = event.dataTransfer.files");
+  });
+
+  it("has no multiple mode, which is why it cannot duplicate on Browse", () => {
+    // The Blade component grew this fault: it appends to the input's own
+    // files, and on a change the browser has already put the new selection
+    // there, so Browse counted every file twice. This component takes
+    // files[0] on both paths and never appends, so the fault has nowhere to
+    // live. If a `multiple` prop is ever added here, the change path must
+    // replace and only the drop path may append — see
+    // DropzoneTest::test_take_is_told_whether_it_is_a_drop_or_a_change.
+    expect(jsx).not.toContain("multiple");
+    expect(jsx).toContain("event.target.files?.[0]");
+    expect(jsx).toContain("event.dataTransfer.files?.[0]");
   });
 
   it("renders exactly one input, mounted for the life of the component", () => {

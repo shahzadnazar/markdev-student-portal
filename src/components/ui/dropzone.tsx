@@ -142,13 +142,19 @@ export function Dropzone({
     event.preventDefault();
     setDragging(false);
 
+    // The first only. This zone holds one file, and the input has to agree
+    // with the card: assigning the whole dropped FileList left two files on
+    // the input while one showed — measured by dropping two here. The input is
+    // what a no-JS submit posts, so a disagreement is not cosmetic.
     const dropped = event.dataTransfer.files?.[0] ?? null;
     if (!dropped) return;
 
     // Put it on the real input too, so a form that posts without JavaScript
     // carries the dropped file rather than nothing.
     if (inputRef.current) {
-      inputRef.current.files = event.dataTransfer.files;
+      const one = new DataTransfer();
+      one.items.add(dropped);
+      inputRef.current.files = one.files;
     }
     take(dropped);
   };
