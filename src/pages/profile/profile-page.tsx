@@ -12,6 +12,7 @@ import { FormError, FormField } from "@/components/shared/form-field";
 import { PageHeader } from "@/components/shared/page-header";
 import { PageLoader } from "@/components/shared/page-loader";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { rejectionReason } from "@/components/ui/dropzone";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -22,7 +23,18 @@ import { useAuth } from "@/context/auth-context";
 import { formatDate, initials } from "@/lib/format";
 import type { User } from "@/types";
 
-const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
+/**
+ * UpdateAvatarRequest is `['required','image','max:2048']` — 2048 KB.
+ *
+ * The photo badge is deliberately NOT a Dropzone. That component is a labelled
+ * dashed zone with type and size chips, for a file that sits in a form until
+ * the form is submitted; this uploads the moment you pick one and its target
+ * is the avatar itself, so a dashed rectangle would replace the control rather
+ * than improve it. What it does share is the check: rejectionReason is the
+ * same function the zones use, so "too big" and "wrong type" read the same
+ * everywhere and neither drifts from the server on its own.
+ */
+const MAX_AVATAR_BYTES = 2048 * 1024;
 
 // const profileSchema = z.object({
 //   name: z.string().trim().min(2, "Your name must be at least 2 characters"),
@@ -133,12 +145,11 @@ function IdentityCard({ user, setUser }: UserCardProps) {
   function handleFileChange(files: FileList | null) {
     const file = files?.[0];
     if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please choose an image file");
-      return;
-    }
-    if (file.size > MAX_AVATAR_BYTES) {
-      toast.error("Please choose an image under 2 MB");
+
+    // A courtesy, never the rule — the server validates this again.
+    const reason = rejectionReason(file, "image/*", MAX_AVATAR_BYTES);
+    if (reason) {
+      toast.error(reason);
       return;
     }
     avatarMutation.mutate(file);

@@ -1,5 +1,5 @@
 import { FileText, Upload, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent } from "react";
 
 import { formatBytes } from "@/lib/format";
@@ -28,6 +28,8 @@ export interface DropzoneProps {
   onFile: (file: File | null) => void;
   /** Marks the input required so a no-JS submit is refused too. */
   required?: boolean;
+  /** Show a thumbnail in the card when the chosen file is an image. */
+  preview?: boolean;
   invalid?: boolean;
   describedBy?: string;
   className?: string;
@@ -91,6 +93,7 @@ export function Dropzone({
   file,
   onFile,
   required = false,
+  preview = false,
   invalid = false,
   describedBy,
   className,
@@ -99,6 +102,20 @@ export function Dropzone({
   const [dragging, setDragging] = useState(false);
   const [rejected, setRejected] = useState<string | null>(null);
   const hintId = useId();
+
+  // A blob URL for the card's thumbnail, revoked when the file changes or the
+  // component goes away — an object URL that is never revoked holds the whole
+  // file in memory for the life of the document.
+  const previewUrl = useMemo(
+    () => (preview && file?.type.startsWith("image/") ? URL.createObjectURL(file) : null),
+    [preview, file],
+  );
+  useEffect(
+    () => () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    },
+    [previewUrl],
+  );
 
   const take = (candidate: File | null) => {
     if (!candidate) {
@@ -169,7 +186,7 @@ export function Dropzone({
           "flex cursor-pointer rounded-xl border transition-colors duration-150",
           "has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-primary/25",
           file
-            ? "items-center gap-3 border-outline-variant/60 bg-surface-ice px-4 py-3"
+            ? "items-center border-outline-variant/60 bg-surface-ice px-4 py-3"
             : "flex-col items-center justify-center gap-2 border-dashed px-4 py-7 text-center",
           !file &&
             (dragging
@@ -194,30 +211,39 @@ export function Dropzone({
         />
 
         {file ? (
-          <>
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-              <FileText className="size-4 text-primary" aria-hidden="true" />
+          <span className="flex w-full min-w-0 flex-col gap-3">
+            {previewUrl ? (
+              <img
+                src={previewUrl}
+                alt={`Preview of ${file.name}`}
+                className="max-h-48 w-full rounded-lg bg-surface-ice object-contain"
+              />
+            ) : null}
+            <span className="flex min-w-0 items-center gap-3">
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                <FileText className="size-4 text-primary" aria-hidden="true" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-body-sm font-medium text-on-surface">{file.name}</span>
+                <span className="block font-mono text-label-sm text-on-surface-variant">{formatBytes(file.size)}</span>
+              </span>
+              {/* Inside the label on purpose. A button is interactive content,
+                  so the label's activation behaviour skips it and this does not
+                  also open the picker — but preventDefault as well, because
+                  that rule is easier to rely on when it is written down. */}
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.preventDefault();
+                  clear();
+                }}
+                aria-label={`Remove ${file.name}`}
+                className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+              >
+                <X className="size-4" aria-hidden="true" />
+              </button>
             </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-body-sm font-medium text-on-surface">{file.name}</span>
-              <span className="block font-mono text-label-sm text-on-surface-variant">{formatBytes(file.size)}</span>
-            </span>
-            {/* Inside the label on purpose. A button is interactive content, so
-                the label's activation behaviour skips it and this does not also
-                open the picker — but preventDefault as well, because that rule
-                is easier to rely on when it is written down. */}
-            <button
-              type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                clear();
-              }}
-              aria-label={`Remove ${file.name}`}
-              className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high hover:text-on-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-            >
-              <X className="size-4" aria-hidden="true" />
-            </button>
-          </>
+          </span>
         ) : (
           <>
             <Upload className={cn("size-5", dragging ? "text-primary" : "text-outline")} aria-hidden="true" />

@@ -1,6 +1,6 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Check, CircleHelp, Copy, FileText, Phone, UploadCloud, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Check, CircleHelp, Copy, FileText, Phone } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useForm, type FieldPath } from "react-hook-form";
 import { z } from "zod";
 import { ApiError } from "@/api/client";
@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Dropzone } from "@/components/ui/dropzone";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -28,8 +29,18 @@ import { formatDate, formatMoney } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { BillingOverview, Invoice } from "@/types";
 
-const MAX_RECEIPT_BYTES = 5 * 1024 * 1024;
+/**
+ * What SubmitFeeRequest actually accepts.
+ *
+ * `['required','file','mimes:png,jpg,jpeg,webp,pdf','max:5120']` — so 5 MB and
+ * four formats, WEBP among them. The old hint under the zone read
+ * "PNG, JPG, PDF (max 5MB)" and quietly dropped WEBP, which the server has
+ * always taken. The chip is generated from this list now, so the two cannot
+ * drift apart again.
+ */
+const MAX_RECEIPT_BYTES = 5120 * 1024;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
+const ACCEPTED_LABEL = "PNG, JPG, WEBP, PDF";
 
 /** Unfinished pay-dialog state survives leaving the browser (e.g. switching
  *  to a banking app) — the payments page reopens it from this key. */
@@ -105,8 +116,6 @@ function CopyValue({ value }: { value: string }) {
 export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDialogProps) {
   const submitFee = useSubmitFeePayment();
   const [rootError, setRootError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [dragging, setDragging] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -127,15 +136,6 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
   // Cash is handed over at the counter — the paper fee receipt's number
   // identifies the payment instead of an account.
   const isCash = selectedMethod?.channel === "cash_deposit";
-
-  // Live preview of the attached receipt.
-  const previewUrl = useMemo(
-    () => (receipt && receipt.type.startsWith("image/") ? URL.createObjectURL(receipt) : null),
-    [receipt],
-  );
-  useEffect(() => () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
 
   // On open: restore the saved draft for these invoices, otherwise start clean.
   useEffect(() => {
@@ -207,8 +207,20 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
     onClose();
   }
 
-  function attachFile(file: File | undefined) {
-    if (!file) return;
+  function attachFile(file: File | null) {
+    if (!file) {
+      // setValue, not resetField. This used to be resetField("receipt"), and
+      // that silently did nothing: emptyValues() never mentions `receipt`, so
+      // there is no recorded default to reset to and react-hook-form kept the
+      // file. The old × was a no-op — measured against this branch's HEAD, a
+      // student who attached the wrong receipt could not take it off. The cast
+      // is the price of a schema where the field is a required File: there is
+      // no "no file" value in that type, only its absence.
+      form.setValue("receipt", undefined as unknown as File, {
+        shouldValidate: form.formState.isSubmitted,
+      });
+      return;
+    }
     form.setValue("receipt", file, { shouldValidate: true });
   }
 
@@ -441,82 +453,28 @@ export function FeeReceiptDialog({ invoices, overview, onClose }: FeeReceiptDial
               )}
 
               <p className="pt-1 font-mono text-label-sm text-primary uppercase">2 · Submit your receipt</p>
-              {/* Receipt dropzone with preview */}
-              <div className="space-y-1.5">
-                <p className="text-body-sm font-medium text-on-surface">Attach receipt</p>
-                {receipt ? (
-                  <div className="relative overflow-hidden rounded-xl border border-outline-variant/60">
-                    {previewUrl ? (
-                      <img src={previewUrl} alt="Receipt preview" className="max-h-56 w-full bg-surface-ice object-contain" />
-                    ) : (
-                      <div className="flex items-center gap-3 bg-surface-ice/70 p-4">
-                        <FileText className="size-8 shrink-0 text-primary" aria-hidden="true" />
-                        <div className="min-w-0">
-                          <p className="truncate text-body-sm font-medium text-on-surface">{receipt.name}</p>
-                          <p className="font-mono text-label-sm text-on-surface-variant">
-                            PDF · {(receipt.size / 1024 / 1024).toFixed(2)} MB
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        form.resetField("receipt");
-                        if (fileInputRef.current) fileInputRef.current.value = "";
-                      }}
-                      className="absolute top-2 right-2 flex size-7 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-error"
-                      aria-label="Remove receipt"
-                    >
-                      <X className="size-4" aria-hidden="true" />
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    onDragOver={(event) => {
-                      event.preventDefault();
-                      setDragging(true);
-                    }}
-                    onDragLeave={() => setDragging(false)}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      setDragging(false);
-                      attachFile(event.dataTransfer.files?.[0]);
-                    }}
-                    className={cn(
-                      "flex w-full flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed px-6 py-8 text-center transition-colors",
-                      dragging
-                        ? "border-primary bg-primary/5"
-                        : "border-outline-variant bg-surface-ice/50 hover:border-primary/50",
-                    )}
-                  >
-                    <span className="flex size-12 items-center justify-center rounded-full bg-white shadow-card">
-                      <UploadCloud className="size-5 text-primary" aria-hidden="true" />
-                    </span>
-                    <span className="font-mono text-body-sm font-medium text-on-surface">
-                      Drop file here or click to upload
-                    </span>
-                    <span className="text-body-sm text-on-surface-variant">
-                      Supported formats: PNG, JPG, PDF (max 5MB)
-                    </span>
-                  </button>
-                )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
+              <FormField
+                label="Attach receipt"
+                htmlFor="fee-receipt"
+                error={form.formState.errors.receipt?.message as string | undefined}
+              >
+                {/* SubmitFeeRequest is required|file|mimes:png,jpg,jpeg,webp,pdf|max:5120,
+                    and the chips are generated from the same two constants the
+                    zod schema uses — so the zone cannot promise the server
+                    something it will refuse. */}
+                <Dropzone
+                  id="fee-receipt"
+                  name="receipt"
                   accept={ACCEPTED_TYPES.join(",")}
-                  className="sr-only"
-                  aria-label="Attach receipt"
-                  onChange={(event) => attachFile(event.target.files?.[0] ?? undefined)}
+                  acceptLabel={ACCEPTED_LABEL}
+                  maxBytes={MAX_RECEIPT_BYTES}
+                  file={receipt ?? null}
+                  onFile={attachFile}
+                  required
+                  preview
+                  invalid={Boolean(form.formState.errors.receipt)}
                 />
-                {form.formState.errors.receipt && (
-                  <p role="alert" className="text-body-sm text-error">
-                    {form.formState.errors.receipt.message as string}
-                  </p>
-                )}
-              </div>
+              </FormField>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormField

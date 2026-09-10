@@ -185,3 +185,75 @@ describe("the assignment submission stays required", () => {
     expect(page).toContain("const SUBMISSION_MAX_BYTES = 10240 * 1024");
   });
 });
+
+describe("the fee receipt keeps its field name and its real limits", () => {
+  const dialog = readFileSync(
+    new URL("../../pages/payments/fee-receipt-dialog.tsx", import.meta.url),
+    "utf8",
+  );
+  const repo = readFileSync(
+    new URL("../../api/repositories/billing.repository.ts", import.meta.url),
+    "utf8",
+  );
+  /** Code only. The comments here name the very calls these guards forbid. */
+  const code = dialog.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("posts under the same field name the controller reads", () => {
+    // The zone's id is fee-receipt so the dialog's other ids stay unique; the
+    // NAME is what the server sees, and it has to stay `receipt`.
+    expect(dialog).toMatch(/<Dropzone[\s\S]*?name="receipt"/);
+    expect(repo).toContain('form.append("receipt", payload.receipt)');
+  });
+
+  it("sizes the chip from SubmitFeeRequest's own max", () => {
+    // max:5120 is kilobytes. Written as 5120 * 1024 rather than 5 * 1024 * 1024
+    // so the rule is legible in the constant.
+    expect(dialog).toContain("const MAX_RECEIPT_BYTES = 5120 * 1024");
+  });
+
+  it("names WEBP, which the server has always taken", () => {
+    // The old hint read "PNG, JPG, PDF (max 5MB)" while mimes: allowed webp —
+    // the client was refusing to admit to a format the server accepts.
+    expect(dialog).toContain('const ACCEPTED_LABEL = "PNG, JPG, WEBP, PDF"');
+    expect(dialog).toContain('"image/webp"');
+  });
+
+  it("stays required and keeps its zod rules", () => {
+    expect(dialog).toMatch(/<Dropzone[\s\S]*?required[\s\S]*?\/>/);
+    expect(dialog).toContain("Attach your payment receipt");
+    expect(dialog).toContain("file.size <= MAX_RECEIPT_BYTES");
+  });
+
+  it("clears the field with setValue, because resetField does not", () => {
+    // Measured against this branch's HEAD: the old × called
+    // resetField("receipt"), emptyValues() never mentioned the field, so there
+    // was no default to reset to and the file stayed. The remove button did
+    // nothing at all.
+    expect(code).toContain('form.setValue("receipt", undefined as unknown as File');
+    expect(code).not.toContain("resetField(");
+  });
+
+  it("has no second hand-rolled zone left behind", () => {
+    // The point of one component is that there is one. This dialog had its own
+    // dashed button, its own dragging state and its own preview URL.
+    expect(code).not.toContain("border-dashed");
+    expect(code).not.toContain("setDragging");
+    expect(code).not.toContain("createObjectURL");
+  });
+});
+
+describe("the profile photo badge", () => {
+  const page = readFileSync(new URL("../../pages/profile/profile-page.tsx", import.meta.url), "utf8");
+
+  it("shares the zones' check rather than hand-rolling its own", () => {
+    // It is NOT a Dropzone — it uploads on pick and its target is the avatar,
+    // so there is no form to hold a file and nowhere to put chips. The check
+    // is shared even though the shape is not.
+    expect(page).toContain("rejectionReason(file, \"image/*\", MAX_AVATAR_BYTES)");
+    expect(page).not.toContain("<Dropzone");
+  });
+
+  it("matches UpdateAvatarRequest's max:2048", () => {
+    expect(page).toContain("const MAX_AVATAR_BYTES = 2048 * 1024");
+  });
+});
