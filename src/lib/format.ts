@@ -112,6 +112,23 @@ export function formatDuration(minutes: number | null | undefined): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
+/**
+ * A whole-quiz clock worded for a human: 90 → "90s", 300 → "5m", 330 → "5m 30s".
+ *
+ * Not formatDuration: that takes MINUTES and would round a 90-second quiz to
+ * "2m", which is a minute the student does not have. Quiz limits are seconds
+ * now, so short ones have to stay in seconds. Mirrors QuizRules::humanTotal on
+ * the server so the two surfaces word the same limit the same way.
+ */
+export function formatDurationSeconds(seconds: number | null | undefined): string {
+  if (seconds == null) return "—";
+  const s = Math.max(0, Math.round(seconds));
+  if (s < 120) return `${s}s`;
+  const m = Math.floor(s / 60);
+  const rest = s % 60;
+  return rest === 0 ? `${m}m` : `${m}m ${rest}s`;
+}
+
 /** 125 → "02:05" (mm:ss), 3725 → "1:02:05" */
 export function formatClock(totalSeconds: number): string {
   const s = Math.max(0, Math.floor(totalSeconds));

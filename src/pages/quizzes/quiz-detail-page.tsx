@@ -25,7 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { useQuiz, useQuizAttempts, useStartQuizAttempt } from "@/hooks/use-assessments";
-import { formatDateTime, formatDuration, formatPercent } from "@/lib/format";
+import { formatDateTime, formatDurationSeconds, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { paths } from "@/routes/paths";
 import type { Quiz, QuizResult, QuizStatus } from "@/types";
@@ -177,19 +177,28 @@ function RulesCard({ quiz }: { quiz: Quiz }) {
       </CardHeader>
       <CardContent>
         <dl className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {/* Both figures, because the total alone does not explain itself:
+              "5m (30s per question)" tells a student how the clock was built
+              and that adding a question would add time. Both come from the
+              API — the page derives neither. */}
           <RuleItem
             icon={Clock}
             label="Time limit"
-            value={
-              quiz.time_limit_minutes != null
-                ? formatDuration(quiz.time_limit_minutes)
-                : formatDuration(Math.max(1, quiz.questions_count))
-            }
+            value={`${formatDurationSeconds(quiz.time_limit_seconds)} (${quiz.seconds_per_question}s per question)`}
           />
+          {/* Remaining, not used. A student whose allowance was lowered after
+              they had already sat the quiz has used more than the quiz now
+              allows, and "2 of 1 used" reads like a bug — while clamping the
+              2 down to 1 would be a lie about their own history, which the
+              attempt list below shows in full. */}
           <RuleItem
             icon={RotateCcw}
             label="Attempts"
-            value={`${quiz.attempts_used} of ${quiz.attempts_allowed} used`}
+            value={
+              attemptsRemaining(quiz) > 0
+                ? `${attemptsRemaining(quiz)} of ${quiz.attempts_allowed} left`
+                : "None left"
+            }
           />
           <RuleItem icon={Target} label="Passing score" value={formatPercent(quiz.passing_score)} />
           <RuleItem icon={ListChecks} label="Questions" value={String(quiz.questions_count)} />
@@ -224,7 +233,7 @@ function StandingCard({
   onStart: () => void;
 }) {
   const badge = statusBadge[quiz.status];
-  const attemptsLeft = Math.max(0, quiz.attempts_allowed - quiz.attempts_used);
+  const attemptsLeft = attemptsRemaining(quiz);
   const canAttempt = attemptsLeft > 0 || quiz.status === "in_progress";
   const actionLabel =
     quiz.status === "in_progress"
@@ -277,9 +286,11 @@ function StandingCard({
         </Button>
 
         {!canAttempt ? (
+          // States the CAP, not a count of what they used. "You've used all 1
+          // attempt" was both awkward and, for a student whose allowance was
+          // lowered after they sat it twice, not what happened.
           <p className="text-center font-mono text-label-sm text-on-surface-variant">
-            You've used all {quiz.attempts_allowed}{" "}
-            {quiz.attempts_allowed === 1 ? "attempt" : "attempts"} for this quiz.
+            This quiz allows {quiz.attempts_allowed === 1 ? "one attempt" : `${quiz.attempts_allowed} attempts`}.
           </p>
         ) : quiz.status === "passed" ? (
           <p className="text-center font-mono text-label-sm text-on-surface-variant">
@@ -289,6 +300,18 @@ function StandingCard({
       </CardContent>
     </Card>
   );
+}
+
+/**
+ * Attempts this student has left, never below zero.
+ *
+ * It can genuinely go negative: lowering the academy default from 2 to 1 does
+ * not delete an attempt anyone already sat, so a student may have used 2 of a
+ * quiz that now allows 1. The server refuses them either way — this only stops
+ * the page printing "-1 attempts remaining".
+ */
+function attemptsRemaining(quiz: Quiz): number {
+  return Math.max(0, quiz.attempts_allowed - quiz.attempts_used);
 }
 
 /* ----------------------------- Attempt history ----------------------------- */

@@ -21,7 +21,7 @@ import { PaginationBar } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuizzes } from "@/hooks/use-assessments";
-import { formatDuration, formatPercent } from "@/lib/format";
+import { formatDurationSeconds, formatPercent } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { paths } from "@/routes/paths";
 import type { Quiz, QuizStatus } from "@/types";
@@ -239,7 +239,7 @@ function QuizRow({ quiz }: { quiz: Quiz }) {
         <p className="mt-1.5 font-mono text-label-sm text-on-surface-variant">
           {quiz.questions_count} {quiz.questions_count === 1 ? "question" : "questions"} ·{" "}
           {quiz.total_points} pts ·{" "}
-          {formatDuration(quiz.time_limit_minutes ?? Math.max(1, quiz.questions_count))} ·{" "}
+          {formatDurationSeconds(quiz.time_limit_seconds)} ·{" "}
           {quiz.attempts_used}/{quiz.attempts_allowed} attempts
         </p>
       </div>

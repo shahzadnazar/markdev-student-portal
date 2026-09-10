@@ -66,7 +66,15 @@ export interface Quiz {
   lesson_id: number | null;
   title: string;
   description: string | null;
-  time_limit_minutes: number | null;
+  /**
+   * The quiz's whole clock, in seconds — questions x seconds_per_question,
+   * derived server-side. Never null: every quiz has a limit now, because a
+   * quiz that sets no rate of its own follows the academy default.
+   */
+  time_limit_seconds: number;
+  /** The rate the total is built from, so the page can show both. */
+  seconds_per_question: number;
+  /** Already resolved: a quiz's own override, or the academy default. */
   attempts_allowed: number;
   attempts_used: number;
   questions_count: number;
