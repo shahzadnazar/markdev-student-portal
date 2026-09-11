@@ -14,13 +14,20 @@ import { formatDateTime } from "@/lib/format";
  * The student's own notebook for this lesson.
  *
  * Sits beside the discussion, and the difference between the two has to be
- * obvious at a glance — one is the cohort's, one is nobody else's. Hence the
- * plain statement under the title rather than a lock icon: a student about to
- * type something candid should be able to read the rule, not infer it.
+ * obvious at a glance — one is the cohort's, one is not. Hence the plain
+ * statement under the title rather than a lock icon: a student about to type
+ * something candid should be able to read the rule, not infer it.
  *
- * Nobody else can read this, including the instructor and an admin; the
- * server scopes every query to the signed-in user and there is no route that
- * returns another person's note.
+ * WHO CAN READ THIS: the student, and academy administrators. Classmates and
+ * instructors cannot — the API scopes every student query to the signed-in
+ * user — but a super-admin has a read-only oversight page, and every time one
+ * opens a note an audit row is written naming them, the student and the
+ * lesson.
+ *
+ * That sentence used to say "nobody else, including an admin", which stopped
+ * being true when the oversight page was added. The wording on screen is the
+ * promise the product makes; when the promise changes, this changes with it in
+ * the same commit.
  */
 export function PrivateNotesCard({ lessonId }: { lessonId: string }) {
   const noteQuery = useLessonPrivateNote(lessonId);
@@ -43,7 +50,7 @@ export function PrivateNotesCard({ lessonId }: { lessonId: string }) {
 
   const save = () => {
     saveNote.mutate(draft, {
-      onSuccess: () => toast.success("Notes saved — only you can see them."),
+      onSuccess: () => toast.success("Notes saved."),
       onError: () => toast.error("Couldn't save your notes. Please try again."),
     });
   };
@@ -57,7 +64,7 @@ export function PrivateNotesCard({ lessonId }: { lessonId: string }) {
         </p>
         <CardTitle>Just for you</CardTitle>
         <p className="text-body-sm text-on-surface-variant">
-          Nobody else can read these — not your classmates, not your instructor.
+          Visible to you and academy administrators. Your classmates and instructors cannot see them.
         </p>
       </CardHeader>
       <CardContent className="space-y-3">

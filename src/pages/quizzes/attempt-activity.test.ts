@@ -123,3 +123,76 @@ describe("the student sees nothing, anywhere", () => {
     expect(types).not.toMatch(/away_count|away_seconds|last_away_at/);
   });
 });
+
+describe("the private-notes promise matches what the server actually does", () => {
+  /**
+   * A super-admin can read these now (markdev-admin-api), read-only and
+   * audited. The wording on screen is the promise the product makes, so it
+   * moved in the same change — and this sweeps the whole portal so a copy of
+   * the old promise cannot survive in a hint, a heading or an empty state
+   * somewhere else.
+   */
+  const sources = (() => {
+    const found: { file: string; text: string }[] = [];
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir)) {
+        const full = path.join(dir, entry);
+        if (statSync(full).isDirectory()) walk(full);
+        else if (/\.(ts|tsx)$/.test(entry) && !entry.endsWith(".test.ts")) {
+          // Comments stripped: the card's docblock QUOTES the old promise in
+          // order to explain that it changed, and a guard that trips on its
+          // own explanation is one people delete. What ships to a student is
+          // the JSX and the toast, which survive this.
+          found.push({
+            file: full,
+            text: readFileSync(full, "utf8")
+              .replace(/\/\*[\s\S]*?\*\//g, "")
+              .replace(/^\s*\/\/.*$/gm, ""),
+          });
+        }
+      }
+    };
+    walk(path.resolve(__dirname, "../.."));
+    return found;
+  })();
+
+  it("no longer claims only the student can see them", () => {
+    // The exact sentence that was on screen, and the phrasings around it.
+    const offenders = sources.filter(({ text }) =>
+      /only you can see them|Nobody else can read these|not your classmates, not your instructor/i.test(text),
+    );
+
+    expect(offenders.map((o) => o.file)).toEqual([]);
+  });
+
+  it("does not promise privacy from an admin anywhere", () => {
+    const offenders = sources.filter(({ text }) =>
+      /(nobody else|no one else)[^.]{0,60}(including|even)[^.]{0,30}admin/i.test(text),
+    );
+
+    expect(offenders.map((o) => o.file)).toEqual([]);
+  });
+
+  it("states the truth where the old promise stood", () => {
+    // Same place, same prominence — the card body, not a tooltip.
+    const card = readFileSync(
+      path.resolve(__dirname, "../lessons/private-notes-card.tsx"),
+      "utf8",
+    );
+
+    expect(card).toContain("Visible to you and academy administrators");
+    // And still says what a student most wants to know: classmates cannot.
+    expect(card).toMatch(/classmates and instructors cannot/i);
+  });
+
+  it("fixed the docblock too, so the next reader is not misled", () => {
+    const card = readFileSync(
+      path.resolve(__dirname, "../lessons/private-notes-card.tsx"),
+      "utf8",
+    );
+    const doc = card.slice(0, card.indexOf("export function"));
+
+    expect(doc).toMatch(/academy administrators|super-admin/i);
+    expect(doc).not.toMatch(/nobody else can read this/i);
+  });
+});
