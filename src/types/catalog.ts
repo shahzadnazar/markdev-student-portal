@@ -128,11 +128,23 @@ export interface Video {
   captions_url: string | null;
 }
 
+/**
+ * A lesson resource: a file to download OR a link to follow.
+ *
+ * `kind` is the discriminator the server stores, not an inference from which
+ * field is null — so the UI picks download-versus-open without guessing.
+ * `url` points at the right place whichever kind it is. Assignment
+ * attachments share this shape and are always "file".
+ */
 export interface Resource {
   id: number;
   name: string;
-  file_url: string;
-  file_type: string;
+  kind: "file" | "link";
+  /** Where to send the student, whatever the kind. */
+  url: string;
+  is_youtube: boolean;
+  file_url: string | null;
+  file_type: string | null;
   size_bytes: number | null;
 }
 

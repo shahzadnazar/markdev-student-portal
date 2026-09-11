@@ -239,8 +239,12 @@ function BriefCard({ assignment }: { assignment: Assignment }) {
             <ul className="mt-3 space-y-2">
               {assignment.attachments.map((resource) => (
                 <li key={resource.id}>
+                  {/* url, not file_url: an assignment attachment is always a
+                      file, but Resource is shared with lesson resources where
+                      file_url is null for a link — url is the field that
+                      always points somewhere. */}
                   <a
-                    href={resource.file_url}
+                    href={resource.url}
                     download
                     target="_blank"
                     rel="noreferrer"
