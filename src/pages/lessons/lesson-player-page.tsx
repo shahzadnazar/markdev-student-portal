@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
+import { Paperclip, PlayCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ApiError } from "@/api/client";
@@ -15,6 +16,7 @@ import {
   useToggleBookmark,
   useTrackLessonActivity,
 } from "@/hooks/use-engagement";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CommentsSection } from "./comments-section";
 import { LessonContent, LessonMetaCard, ResourcesCard } from "./lesson-content";
 import { CurriculumDialog, CurriculumRail } from "./lesson-sidebar";
@@ -194,38 +196,48 @@ export default function LessonPlayerPage() {
                 }}
               />
             ) : lesson ? (
-              <>
-                <motion.div
-                  {...sectionMotion}
-                  transition={{ duration: 0.4, ease: "easeOut" }}
-                >
-                  <LessonContent lesson={lesson} onSample={onSample} onPause={onPause} />
-                </motion.div>
+              <motion.div
+                {...sectionMotion}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+              >
+                {/* Two tabs, Premium Video first. Called tabs rather than
+                    modules because a course already HAS modules — Module 01,
+                    Module 02 — and reusing that word for a different idea in
+                    the same screen is how a codebase starts lying to itself.
 
-                <motion.div
-                  {...sectionMotion}
-                  transition={{ duration: 0.4, delay: 0.08, ease: "easeOut" }}
-                >
-                  <LessonMetaCard lesson={lesson} />
-                </motion.div>
+                    The player, the lesson meta and the discussion live
+                    together under the first tab because they are one activity:
+                    you watch, then you ask. Resources are a different errand
+                    and get their own tab rather than a scroll. */}
+                <Tabs defaultValue="video" className="gap-4">
+                  <TabsList>
+                    <TabsTrigger value="video">
+                      <PlayCircle aria-hidden="true" />
+                      Premium Video
+                    </TabsTrigger>
+                    <TabsTrigger value="resources">
+                      <Paperclip aria-hidden="true" />
+                      Resources
+                      {lesson.resources.length > 0 ? (
+                        <span className="rounded-full bg-surface-container px-1.5 font-mono text-label-sm">
+                          {lesson.resources.length}
+                        </span>
+                      ) : null}
+                    </TabsTrigger>
+                  </TabsList>
 
-                {lesson.resources.length > 0 ? (
-                  <motion.div
-                    {...sectionMotion}
-                    transition={{ duration: 0.4, delay: 0.14, ease: "easeOut" }}
-                  >
+                  <TabsContent value="video" className="space-y-5">
+                    <LessonContent lesson={lesson} onSample={onSample} onPause={onPause} />
+                    <LessonMetaCard lesson={lesson} />
+                    <CommentsSection lessonId={lessonId} />
+                  </TabsContent>
+
+                  <TabsContent value="resources">
                     <ResourcesCard resources={lesson.resources} />
-                  </motion.div>
-                ) : null}
-              </>
+                  </TabsContent>
+                </Tabs>
+              </motion.div>
             ) : null}
-
-            <motion.div
-              {...sectionMotion}
-              transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
-            >
-              <CommentsSection lessonId={lessonId} />
-            </motion.div>
           </div>
 
           <CurriculumRail {...curriculumProps} />
