@@ -274,13 +274,29 @@ export interface ProgressOverview {
 }
 /* --------------------------------- Notes --------------------------------- */
 
+/**
+ * One item on the Notes page: an instructor's uploaded file, or a resource
+ * attached to the course.
+ *
+ * Two sources in one list because they are one thing to a student — material
+ * someone put there for them. `source` says which, and `kind` says whether to
+ * download it or open it. NOT the student's own private notes, which live on
+ * the lesson player and are never listed here.
+ */
 export interface Note {
   id: number;
+  /** Which table this came from. Ids are only unique within a source. */
+  source: "note" | "resource";
+  /** A file downloads; a link opens. */
+  kind: "file" | "link";
   title: string;
   description: string | null;
+  /** Where to send the student, whatever the kind. */
+  url: string | null;
   file_url: string | null;
   file_type: string | null;
-  size_bytes: number;
+  size_bytes: number | null;
+  is_youtube: boolean;
   uploaded_at: string | null;
   is_read: boolean;
 

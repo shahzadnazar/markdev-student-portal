@@ -6,10 +6,13 @@ import {
   FileArchive,
   FileImage,
   FileSpreadsheet,
+  ExternalLink,
   FileText,
+  Link as LinkIcon,
   Presentation,
   Search,
   Video,
+  Youtube,
   CalendarDays,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -153,14 +156,20 @@ export default function NotesPage() {
      * We don't wait for this request because we don't want
      * the student to have to wait before opening the PDF.
      */
-    markNoteRead.mutate(note.id);
+    // Only a note has read-tracking. A course resource has no MaterialRead
+    // row behind it, and posting its id to /notes/{id}/read would mark an
+    // unrelated note as read — ids are only unique within a source.
+    if (note.source === "note") {
+      markNoteRead.mutate(note.id);
+    }
 
     /*
-     * Open the actual note file.
+     * Open it. `url` points at the right place whichever kind it is — a file's
+     * stored path, or the link itself.
      */
-    if (note.file_url) {
+    if (note.url) {
       window.open(
-        note.file_url,
+        note.url,
         "_blank",
         "noopener,noreferrer",
       );
@@ -342,7 +351,7 @@ export default function NotesPage() {
         <div className="grid w-full grid-cols-1 items-start gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filteredNotes.map((note, index) => (
             <motion.div
-              key={note.id}
+              key={`${note.source}-${note.id}`}
               initial={{
                 opacity: 0,
                 y: 12,
@@ -422,11 +431,17 @@ function NoteCard({
   courseIndex: number;
   onOpen: (note: Note) => void;
 }) {
+  // A link is not a file type. Giving it the generic document tile would make
+  // "open a YouTube video" and "download a PDF" look like the same action.
   const {
     icon: Icon,
     tile,
     iconColor,
-  } = fileVisual(note.file_type);
+  } = note.kind === "link"
+    ? note.is_youtube
+      ? { icon: Youtube, tile: "bg-error/10", iconColor: "text-error" }
+      : { icon: LinkIcon, tile: "bg-primary/10", iconColor: "text-primary" }
+    : fileVisual(note.file_type);
 
   const badge = badgeStyle(courseIndex);
 
@@ -511,7 +526,10 @@ function NoteCard({
           </span>
         </span>
 
-        {note.file_url ? (
+        {/* A link opens, a file downloads — so the button says which, in the
+            icon and in the accessible name. Announcing "Download" over a
+            YouTube link would be a promise the browser does not keep. */}
+        {note.url ? (
           <Button
             type="button"
             size="icon"
@@ -523,13 +541,20 @@ function NoteCard({
               hover:bg-primary
               hover:text-white
             "
-            aria-label={`Download ${note.title}`}
+            aria-label={`${note.kind === "link" ? "Open" : "Download"} ${note.title}`}
             onClick={() => onOpen(note)}
           >
-            <Download
-              className="size-4"
-              aria-hidden="true"
-            />
+            {note.kind === "link" ? (
+              <ExternalLink
+                className="size-4"
+                aria-hidden="true"
+              />
+            ) : (
+              <Download
+                className="size-4"
+                aria-hidden="true"
+              />
+            )}
           </Button>
         ) : null}
       </div>
