@@ -57,6 +57,12 @@ describe("the Notes page", () => {
     expect(code).not.toMatch(/enroll/i);
   });
 
+  it("shows the row's own description, so a lesson resource can name its lesson", () => {
+    // The API sends "From lesson: ..." on a lesson-level resource. A card that
+    // always printed the generic fallback would drop that attribution.
+    expect(code).toMatch(/\{note\.description \?\?/);
+  });
+
   it("shows no private notes", () => {
     // Private notes are the student's own writing on the lesson player. They
     // are not published material and have no route through this page.

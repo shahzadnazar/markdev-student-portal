@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { motion } from "framer-motion";
-import { Paperclip, PlayCircle } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import { ApiError } from "@/api/client";
@@ -16,9 +15,8 @@ import {
   useToggleBookmark,
   useTrackLessonActivity,
 } from "@/hooks/use-engagement";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CommentsSection } from "./comments-section";
-import { LessonContent, LessonMetaCard, ResourcesCard } from "./lesson-content";
+import { LessonContent, LessonMetaCard } from "./lesson-content";
 import { PrivateNotesCard } from "./private-notes-card";
 import { CurriculumDialog, CurriculumRail } from "./lesson-sidebar";
 import { LessonTopbar } from "./lesson-topbar";
@@ -201,49 +199,28 @@ export default function LessonPlayerPage() {
                 {...sectionMotion}
                 transition={{ duration: 0.4, ease: "easeOut" }}
               >
-                {/* Two tabs, Premium Video first. Called tabs rather than
-                    modules because a course already HAS modules — Module 01,
-                    Module 02 — and reusing that word for a different idea in
-                    the same screen is how a codebase starts lying to itself.
+                {/* One activity, no tab strip. The player, the lesson meta,
+                    the discussion and the private notebook are all the same
+                    errand — you watch, then you ask, then you write it down.
 
-                    The player, the lesson meta and the discussion live
-                    together under the first tab because they are one activity:
-                    you watch, then you ask. Resources are a different errand
-                    and get their own tab rather than a scroll. */}
-                <Tabs defaultValue="video" className="gap-4">
-                  <TabsList>
-                    <TabsTrigger value="video">
-                      <PlayCircle aria-hidden="true" />
-                      Premium Video
-                    </TabsTrigger>
-                    <TabsTrigger value="resources">
-                      <Paperclip aria-hidden="true" />
-                      Resources
-                      {lesson.resources.length > 0 ? (
-                        <span className="rounded-full bg-surface-container px-1.5 font-mono text-label-sm">
-                          {lesson.resources.length}
-                        </span>
-                      ) : null}
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="video" className="space-y-5">
-                    <LessonContent lesson={lesson} onSample={onSample} onPause={onPause} />
-                    <LessonMetaCard lesson={lesson} />
-                    {/* Side by side above lg, stacked below: the public thread
-                        and the private notebook are peers under the player,
-                        and putting one below the other on a wide screen would
-                        make the notebook look like an afterthought. */}
-                    <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
-                      <CommentsSection lessonId={lessonId} />
-                      <PrivateNotesCard lessonId={lessonId} />
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="resources">
-                    <ResourcesCard resources={lesson.resources} />
-                  </TabsContent>
-                </Tabs>
+                    There were two tabs. Resources moved to the Notes page,
+                    where a student finds every piece of material at once
+                    instead of opening each lesson to see what is attached to
+                    it, and a single remaining tab is a heading with extra
+                    steps: a strip you cannot switch away from, costing a
+                    tabpanel, a roving tabindex and a click to nothing. */}
+                <div className="space-y-5">
+                  <LessonContent lesson={lesson} onSample={onSample} onPause={onPause} />
+                  <LessonMetaCard lesson={lesson} />
+                  {/* Side by side above lg, stacked below: the public thread
+                      and the private notebook are peers under the player, and
+                      putting one below the other on a wide screen would make
+                      the notebook look like an afterthought. */}
+                  <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+                    <CommentsSection lessonId={lessonId} />
+                    <PrivateNotesCard lessonId={lessonId} />
+                  </div>
+                </div>
               </motion.div>
             ) : null}
           </div>

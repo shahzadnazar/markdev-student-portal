@@ -2,23 +2,19 @@ import type { LucideIcon } from "lucide-react";
 import {
   ClipboardList,
   Clock,
-  Download,
-  ExternalLink,
   FileQuestion,
   FileText,
   FolderDown,
-  Link as LinkIcon,
   PlayCircle,
-  Youtube,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "@/components/shared/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatBytes, formatClock, formatDuration } from "@/lib/format";
+import { Card, CardContent } from "@/components/ui/card";
+import { formatClock, formatDuration } from "@/lib/format";
 import { paths } from "@/routes/paths";
-import type { Lesson, Resource } from "@/types";
+import type { Lesson } from "@/types";
 import { VideoPlayer } from "./video-player";
 import type { PlaybackSample } from "./video-player";
 
@@ -187,86 +183,6 @@ export function LessonMetaCard({ lesson }: { lesson: Lesson }) {
             </span>
           ) : null}
         </div>
-      </CardContent>
-    </Card>
-  );
-}
-
-/** Attached files with type, size and a download action. Render only when non-empty. */
-export function ResourcesCard({ resources }: { resources: Resource[] }) {
-  return (
-    <Card>
-      <CardHeader>
-        <p className="font-mono text-label-sm text-primary uppercase">Resources</p>
-        <CardTitle className="text-body-lg font-semibold">
-          {/* "files" was accurate when a resource could only be a file. It can
-              be a link now, so the noun has to cover both. */}
-          {resources.length} {resources.length === 1 ? "item" : "items"} attached
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <ul className="divide-y divide-outline-variant/40">
-          {resources.map((resource) => (
-            <li key={resource.id} className="flex items-center gap-4 py-3 first:pt-0 last:pb-0">
-              <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                {resource.kind === "link" ? (
-                  resource.is_youtube ? (
-                    <Youtube className="size-5 text-primary" aria-hidden="true" />
-                  ) : (
-                    <LinkIcon className="size-5 text-primary" aria-hidden="true" />
-                  )
-                ) : (
-                  <FileText className="size-5 text-primary" aria-hidden="true" />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-body-sm font-medium text-on-surface">{resource.name}</p>
-                <div className="mt-0.5 flex items-center gap-2">
-                  {resource.kind === "link" ? (
-                    <>
-                      <Badge variant="neutral">{resource.is_youtube ? "YouTube" : "Link"}</Badge>
-                      <span className="truncate font-mono text-label-sm text-outline">{resource.url}</span>
-                    </>
-                  ) : (
-                    <>
-                      <Badge variant="neutral">{resource.file_type}</Badge>
-                      <span className="font-mono text-label-sm text-outline">
-                        {formatBytes(resource.size_bytes)}
-                      </span>
-                    </>
-                  )}
-                </div>
-              </div>
-              {/* A file downloads, a link opens. `download` on a cross-origin
-                  link is ignored by the browser anyway and would only make the
-                  button lie about what it does. */}
-              <Button variant="secondary" size="sm" asChild className="shrink-0">
-                {resource.kind === "link" ? (
-                  <a
-                    href={resource.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`Open ${resource.name} in a new tab`}
-                  >
-                    <ExternalLink aria-hidden="true" />
-                    <span className="hidden sm:inline">Open</span>
-                  </a>
-                ) : (
-                  <a
-                    href={resource.url}
-                    download
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label={`Download ${resource.name}`}
-                  >
-                    <Download aria-hidden="true" />
-                    <span className="hidden sm:inline">Download</span>
-                  </a>
-                )}
-              </Button>
-            </li>
-          ))}
-        </ul>
       </CardContent>
     </Card>
   );
