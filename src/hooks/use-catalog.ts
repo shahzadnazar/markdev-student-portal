@@ -75,6 +75,56 @@ export function useLessonComments(lessonId: number | string) {
   });
 }
 
+/**
+ * The student's own notebook for this lesson.
+ *
+ * Its own query key, never merged into the lesson cache: a private note must
+ * not ride along in a payload the rest of the cohort's UI also reads.
+ */
+export function useLessonPrivateNote(lessonId: number | string) {
+  return useQuery({
+    queryKey: qk.lessonPrivateNote(lessonId),
+    queryFn: () => lessonsRepository.privateNote(lessonId),
+  });
+}
+
+export function useSavePrivateNote(lessonId: number | string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) => lessonsRepository.savePrivateNote(lessonId, body),
+    onSuccess: (note) => {
+      // The server answers 204 with no body when the note is cleared, so fall
+      // back to an empty one rather than caching undefined.
+      queryClient.setQueryData(qk.lessonPrivateNote(lessonId), note ?? {
+        lesson_id: Number(lessonId),
+        body: "",
+        updated_at: null,
+      });
+    },
+  });
+}
+
+export function useEditComment(lessonId: number | string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ commentId, body }: { commentId: number; body: string }) =>
+      lessonsRepository.editComment(lessonId, commentId, body),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qk.lessonComments(lessonId) });
+    },
+  });
+}
+
+export function useDeleteComment(lessonId: number | string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (commentId: number) => lessonsRepository.deleteComment(lessonId, commentId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qk.lessonComments(lessonId) });
+    },
+  });
+}
+
 export function useAddComment(lessonId: number | string) {
   const queryClient = useQueryClient();
   return useMutation({

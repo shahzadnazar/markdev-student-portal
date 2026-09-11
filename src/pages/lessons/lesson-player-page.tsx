@@ -19,6 +19,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CommentsSection } from "./comments-section";
 import { LessonContent, LessonMetaCard, ResourcesCard } from "./lesson-content";
+import { PrivateNotesCard } from "./private-notes-card";
 import { CurriculumDialog, CurriculumRail } from "./lesson-sidebar";
 import { LessonTopbar } from "./lesson-topbar";
 import { useVideoProgress } from "@/hooks/use-video-progress";
@@ -229,7 +230,14 @@ export default function LessonPlayerPage() {
                   <TabsContent value="video" className="space-y-5">
                     <LessonContent lesson={lesson} onSample={onSample} onPause={onPause} />
                     <LessonMetaCard lesson={lesson} />
-                    <CommentsSection lessonId={lessonId} />
+                    {/* Side by side above lg, stacked below: the public thread
+                        and the private notebook are peers under the player,
+                        and putting one below the other on a wide screen would
+                        make the notebook look like an afterthought. */}
+                    <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
+                      <CommentsSection lessonId={lessonId} />
+                      <PrivateNotesCard lessonId={lessonId} />
+                    </div>
                   </TabsContent>
 
                   <TabsContent value="resources">

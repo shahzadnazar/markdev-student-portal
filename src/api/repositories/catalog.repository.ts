@@ -1,4 +1,4 @@
-import { destroy, get, getRaw, post } from "@/api/client";
+import { destroy, get, getRaw, post, put } from "@/api/client";
 import type {
   Category,
   Comment,
@@ -9,6 +9,7 @@ import type {
   Module,
   Paginated,
   VideoProgress,
+  PrivateNote,
 } from "@/types";
 
 export const coursesRepository = {
@@ -64,5 +65,28 @@ export const lessonsRepository = {
 
   addComment(lessonId: number | string, body: string, parentId?: number) {
     return post<Comment>(`/lessons/${lessonId}/comments`, { body, parent_id: parentId ?? null });
+  },
+
+  editComment(lessonId: number | string, commentId: number, body: string) {
+    return put<Comment>(`/lessons/${lessonId}/comments/${commentId}`, { body });
+  },
+
+  deleteComment(lessonId: number | string, commentId: number) {
+    return destroy<void>(`/lessons/${lessonId}/comments/${commentId}`);
+  },
+
+  /**
+   * The student's own notebook for this lesson.
+   *
+   * Its own endpoint, never folded into the lesson payload: a private note
+   * has no business travelling in a response that also carries the public
+   * discussion.
+   */
+  privateNote(lessonId: number | string) {
+    return get<PrivateNote>(`/lessons/${lessonId}/private-note`);
+  },
+
+  savePrivateNote(lessonId: number | string, body: string) {
+    return put<PrivateNote>(`/lessons/${lessonId}/private-note`, { body });
   },
 };

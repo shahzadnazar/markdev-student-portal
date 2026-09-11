@@ -23,6 +23,9 @@ export const qk = {
   lesson: (courseId: number | string, lessonId: number | string) =>
     ["lessons", String(courseId), String(lessonId)] as const,
   lessonComments: (lessonId: number | string) => ["lessons", "comments", String(lessonId)] as const,
+  // Separate from lessonComments on purpose: the notebook is one person's and
+  // must not share a cache entry with the cohort's discussion.
+  lessonPrivateNote: (lessonId: number | string) => ["lessons", "private-note", String(lessonId)] as const,
 
   assignments: (params: AssignmentListParams = {}) => ["assignments", params] as const,
   assignment: (id: number | string) => ["assignments", "detail", String(id)] as const,

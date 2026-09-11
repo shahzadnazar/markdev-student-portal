@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CornerDownRight, MessagesSquare, Reply, Send, X } from "lucide-react";
+import { CornerDownRight, MessagesSquare, Pencil, Reply, Send, Trash2, X } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/auth-context";
-import { useAddComment, useLessonComments } from "@/hooks/use-catalog";
+import { useAddComment, useDeleteComment, useEditComment, useLessonComments } from "@/hooks/use-catalog";
 import { formatRelative, initials } from "@/lib/format";
 import type { Comment } from "@/types";
 
@@ -50,9 +50,40 @@ function toThreads(comments: Comment[]): { comment: Comment; replies: Comment[] 
 interface CommentItemProps {
   comment: Comment;
   onReply?: (comment: Comment) => void;
+  /** The signed-in student, so their own comments grow edit and delete. */
+  currentUserId?: number;
+  lessonId: string;
 }
 
-function CommentItem({ comment, onReply }: CommentItemProps) {
+function CommentItem({ comment, onReply, currentUserId, lessonId }: CommentItemProps) {
+  const editComment = useEditComment(lessonId);
+  const deleteComment = useDeleteComment(lessonId);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(comment.body);
+
+  // Decoration only. The server asks CommentPolicy on every edit and delete,
+  // so hiding these changes what is offered, never what is allowed.
+  const mine = currentUserId != null && comment.author.id === currentUserId;
+
+  const saveEdit = () => {
+    const body = draft.trim();
+    if (body === "" || body === comment.body) {
+      setEditing(false);
+      return;
+    }
+    editComment.mutate(
+      { commentId: comment.id, body },
+      {
+        onSuccess: () => {
+          setEditing(false);
+          toast.success("Comment updated.");
+        },
+        onError: (error) =>
+          toast.error(error instanceof ApiError ? error.message : "Couldn't update that comment."),
+      },
+    );
+  };
+
   return (
     <article className="flex gap-3">
       <Avatar className="size-9">
@@ -68,19 +99,78 @@ function CommentItem({ comment, onReply }: CommentItemProps) {
             {formatRelative(comment.created_at)}
           </time>
         </div>
-        <p className="mt-1 text-body-sm whitespace-pre-line text-on-surface-variant">
-          {comment.body}
-        </p>
-        {onReply ? (
-          <button
-            type="button"
-            onClick={() => onReply(comment)}
-            className="mt-1.5 inline-flex items-center gap-1 rounded font-mono text-label-sm text-primary uppercase transition-colors duration-150 hover:text-primary-deep"
-          >
-            <Reply className="size-3.5" aria-hidden="true" />
-            Reply
-          </button>
-        ) : null}
+        {editing ? (
+          <div className="mt-2 space-y-2">
+            <Textarea
+              rows={3}
+              value={draft}
+              onChange={(event) => setDraft(event.target.value)}
+              aria-label="Edit your comment"
+            />
+            <div className="flex gap-2">
+              <Button size="sm" onClick={saveEdit} disabled={editComment.isPending}>
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setDraft(comment.body);
+                  setEditing(false);
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-1 text-body-sm whitespace-pre-line text-on-surface-variant">
+            {comment.body}
+          </p>
+        )}
+        {editing ? null : (
+          <div className="mt-1.5 flex flex-wrap items-center gap-3">
+            {onReply ? (
+              <button
+                type="button"
+                onClick={() => onReply(comment)}
+                className="inline-flex items-center gap-1 rounded font-mono text-label-sm text-primary uppercase transition-colors duration-150 hover:text-primary-deep"
+              >
+                <Reply className="size-3.5" aria-hidden="true" />
+                Reply
+              </button>
+            ) : null}
+            {mine ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="inline-flex items-center gap-1 rounded font-mono text-label-sm text-on-surface-variant uppercase transition-colors duration-150 hover:text-on-surface"
+                >
+                  <Pencil className="size-3.5" aria-hidden="true" />
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  disabled={deleteComment.isPending}
+                  onClick={() =>
+                    deleteComment.mutate(comment.id, {
+                      onSuccess: () => toast.success("Comment deleted."),
+                      onError: (error) =>
+                        toast.error(
+                          error instanceof ApiError ? error.message : "Couldn't delete that comment.",
+                        ),
+                    })
+                  }
+                  className="inline-flex items-center gap-1 rounded font-mono text-label-sm text-on-surface-variant uppercase transition-colors duration-150 hover:text-error"
+                >
+                  <Trash2 className="size-3.5" aria-hidden="true" />
+                  Delete
+                </button>
+              </>
+            ) : null}
+          </div>
+        )}
       </div>
     </article>
   );
@@ -243,7 +333,7 @@ export function CommentsSection({ lessonId }: { lessonId: string }) {
           <ul className="space-y-6" aria-label="Comments">
             {threads.map(({ comment, replies }) => (
               <li key={comment.id}>
-                <CommentItem comment={comment} onReply={startReply} />
+                <CommentItem comment={comment} onReply={startReply} currentUserId={user?.id} lessonId={lessonId} />
                 {replies.length > 0 ? (
                   <ul
                     className="mt-4 ml-4 space-y-4 border-l-2 border-outline-variant/50 pl-6 sm:ml-12 sm:pl-4"
@@ -251,7 +341,7 @@ export function CommentsSection({ lessonId }: { lessonId: string }) {
                   >
                     {replies.map((reply) => (
                       <li key={reply.id}>
-                        <CommentItem comment={reply} />
+                        <CommentItem comment={reply} currentUserId={user?.id} lessonId={lessonId} />
                       </li>
                     ))}
                   </ul>

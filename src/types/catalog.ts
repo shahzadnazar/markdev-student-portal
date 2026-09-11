@@ -136,6 +136,19 @@ export interface Resource {
   size_bytes: number | null;
 }
 
+/**
+ * One student's private notes on one lesson.
+ *
+ * `body` is "" when nothing has been written yet — the endpoint answers with
+ * an empty note rather than a 404, because "you have no notes here" is a
+ * state, not a missing resource.
+ */
+export interface PrivateNote {
+  lesson_id: number;
+  body: string;
+  updated_at: string | null;
+}
+
 export interface Comment {
   id: number;
   lesson_id: number;
