@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   //Bell,
@@ -26,9 +26,10 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 
 import { useCourses, useCourseModules } from "@/hooks/use-catalog";
-import { formatCompact, formatDuration, formatMonthShort, formatPercent, formatWeekdayShort, initials } from "@/lib/format";
+import { orderedLessons, orderedModules, selectedModule } from "./module-strip";
+import { formatCompact, formatDuration, formatPercent, initials } from "@/lib/format";
 import { paths } from "@/routes/paths";
-import type { LessonSummary } from "@/types";
+import type { LessonSummary, Module } from "@/types";
 
 const sectionMotion = (delay: number) => ({
   initial: { opacity: 0, y: 12 },
@@ -362,89 +363,21 @@ export default function CoursesPage() {
               </Card>
             </motion.section>
 
-            {/* WEEKLY SCHEDULE */}
+            {/* COURSE MODULES */}
             <motion.section
               {...sectionMotion(0.15)}
               className="min-w-0 xl:col-span-8"
             >
               <Card className="rounded-2xl border-0 shadow-sm sm:rounded-3xl">
                 <CardContent className="p-5 sm:p-6">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="font-mono text-[10px] uppercase tracking-wider text-primary sm:text-label-sm">
-                        Learning Plan
-                      </p>
-
-                      <h2 className="mt-1 font-display text-xl font-semibold text-on-surface sm:text-2xl">
-                        Weekly Schedule
-                      </h2>
-                    </div>
-
-                    <div className="hidden gap-2 sm:flex">
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="size-9 rounded-full"
-                      >
-                        <ChevronLeft />
-                      </Button>
-
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="size-9 rounded-full"
-                      >
-                        <ChevronRight />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 flex gap-2 overflow-x-auto pb-1 sm:gap-3">
-                    {weekDays().map((day, index) => (
-                      <div
-                        key={day.key}
-                        className={[
-                          "min-w-[68px] flex-1 rounded-xl p-3 text-center sm:min-w-[78px] sm:rounded-2xl sm:p-4",
-                          index === 0
-                            ? "bg-secondary text-on-secondary shadow-lg"
-                            : "bg-surface-ice text-on-surface-variant",
-                        ].join(" ")}
-                      >
-                        <p className="font-mono text-[9px] font-medium sm:text-label-sm">
-                          {day.weekday}
-                        </p>
-
-                        <p className="mt-1 font-display text-xl font-semibold sm:text-2xl">
-                          {day.day}
-                        </p>
-
-                        <p className="mt-1 font-mono text-[9px] sm:text-label-sm">
-                          {day.month}
-                        </p>
-
-                        {index === 0 ? (
-                          <div className="mx-auto mt-2 size-1.5 rounded-full bg-white" />
-                        ) : null}
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="mt-5 space-y-2.5">
-                    {lessons.slice(0, 3).map((lesson) => (
-                      <LessonItem
-                        key={lesson.id}
-                        lesson={lesson}
-                        courseId={course.id}
-                        isEnrolled={course.is_enrolled}
-                      />
-                    ))}
-
-                    {lessons.length === 0 ? (
-                      <div className="rounded-2xl bg-surface-ice p-6 text-center text-sm text-on-surface-variant">
-                        No lessons available yet.
-                      </div>
-                    ) : null}
-                  </div>
+                  <ModuleStrip
+                    modules={modulesQuery.data}
+                    isLoading={modulesQuery.isPending}
+                    isError={modulesQuery.isError}
+                    onRetry={() => void modulesQuery.refetch()}
+                    courseId={course.id}
+                    isEnrolled={course.is_enrolled}
+                  />
                 </CardContent>
               </Card>
             </motion.section>
@@ -735,6 +668,228 @@ function ProgressCircle({
   );
 }
 
+/**
+ * The course's modules, and the lessons inside the one being looked at.
+ *
+ * This replaced a five-box "Weekly Schedule" whose dates came from the
+ * browser's clock and whose boxes were connected to nothing — it showed the
+ * current week whatever the course was, and the three lessons underneath were
+ * the first three of the course rather than anything to do with the dates
+ * above them. Everything here comes from useCourseModules.
+ */
+function ModuleStrip({
+  modules,
+  isLoading,
+  isError,
+  onRetry,
+  courseId,
+  isEnrolled,
+}: {
+  modules: Module[] | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
+  courseId: number | string;
+  isEnrolled: boolean;
+}) {
+  const [clickedId, setClickedId] = useState<number | null>(null);
+
+  const ordered = useMemo(() => orderedModules(modules), [modules]);
+  const current = useMemo(() => selectedModule(modules, clickedId), [modules, clickedId]);
+  const lessons = useMemo(() => orderedLessons(current ?? undefined), [current]);
+
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const [overflowing, setOverflowing] = useState(false);
+
+  /*
+   * The arrows exist only when there is something to scroll to. A control that
+   * does nothing is worse than no control, and whether the strip overflows
+   * depends on the module count AND the width it is given — so it is measured,
+   * not guessed from a breakpoint, and re-measured when the window resizes.
+   */
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    const measure = () => setOverflowing(track.scrollWidth > track.clientWidth + 1);
+
+    measure();
+
+    const observer = new ResizeObserver(measure);
+    observer.observe(track);
+
+    return () => observer.disconnect();
+  }, [ordered.length]);
+
+  // Most of a screenful, so a click moves visibly without skipping a module.
+  const scrollBy = (direction: -1 | 1) => {
+    const track = trackRef.current;
+    if (!track) return;
+
+    track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
+  };
+
+  // Keep the selection on a module this course still has: a refetch that drops
+  // the clicked module would otherwise leave the strip with nothing lit.
+  useEffect(() => {
+    if (clickedId !== null && !ordered.some((module) => module.id === clickedId)) {
+      setClickedId(null);
+    }
+  }, [ordered, clickedId]);
+
+  /*
+   * Bring the opening module into view once, when the modules first arrive.
+   *
+   * Landing on module 7 is only half the promise if the strip is still
+   * scrolled to module 1 and nothing looks selected. Only on the first load —
+   * afterwards the scroll position is the student's, and yanking the strip
+   * back under a hand that just scrolled it is worse than leaving it alone.
+   */
+  const settled = useRef(false);
+  useEffect(() => {
+    const track = trackRef.current;
+
+    if (settled.current || !track || current === null) return;
+
+    settled.current = true;
+    track
+      .querySelector<HTMLElement>('[role="tab"][aria-selected="true"]')
+      ?.scrollIntoView({ block: "nearest", inline: "center" });
+  }, [current]);
+
+  return (
+    <>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-wider text-primary sm:text-label-sm">
+            Learning Plan
+          </p>
+
+          <h2 className="mt-1 font-display text-xl font-semibold text-on-surface sm:text-2xl">
+            Course Modules
+          </h2>
+        </div>
+
+        {overflowing ? (
+          <div className="hidden gap-2 sm:flex">
+            <Button
+              variant="secondary"
+              size="icon"
+              className="size-9 rounded-full"
+              aria-label="Scroll modules left"
+              onClick={() => scrollBy(-1)}
+            >
+              <ChevronLeft />
+            </Button>
+
+            <Button
+              variant="secondary"
+              size="icon"
+              className="size-9 rounded-full"
+              aria-label="Scroll modules right"
+              onClick={() => scrollBy(1)}
+            >
+              <ChevronRight />
+            </Button>
+          </div>
+        ) : null}
+      </div>
+
+      {isLoading ? (
+        <>
+          <div className="mt-5 flex gap-2 sm:gap-3">
+            {[0, 1, 2].map((index) => (
+              <Skeleton key={index} className="h-[104px] w-[140px] shrink-0 rounded-xl sm:rounded-2xl" />
+            ))}
+          </div>
+
+          <div className="mt-5 space-y-2.5">
+            {[0, 1, 2].map((index) => (
+              <Skeleton key={index} className="h-[68px] rounded-2xl" />
+            ))}
+          </div>
+        </>
+      ) : isError ? (
+        /* A course whose modules failed to load has not lost its modules.
+           Saying "no modules yet" here would report a network problem as a
+           fact about the course, and leave no way to try again. */
+        <div className="mt-5 rounded-2xl bg-surface-ice p-6 text-center">
+          <p className="text-sm text-on-surface-variant">Couldn't load this course's modules.</p>
+
+          <Button variant="secondary" size="sm" className="mt-3" onClick={onRetry}>
+            Try again
+          </Button>
+        </div>
+      ) : ordered.length === 0 ? (
+        <div className="mt-5 rounded-2xl bg-surface-ice p-6 text-center text-sm text-on-surface-variant">
+          This course has no modules yet.
+        </div>
+      ) : (
+        <>
+          <div
+            ref={trackRef}
+            role="tablist"
+            aria-label="Course modules"
+            className="mt-5 flex gap-2 overflow-x-auto pb-1 sm:gap-3"
+          >
+            {ordered.map((module, index) => {
+              const active = module.id === current?.id;
+              const count = module.lessons_count || module.lessons.length;
+
+              return (
+                <button
+                  key={module.id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setClickedId(module.id)}
+                  className={[
+                    "min-w-[128px] max-w-[190px] flex-1 shrink-0 rounded-xl p-3 text-left transition-colors sm:min-w-[150px] sm:rounded-2xl sm:p-4",
+                    active
+                      ? "bg-secondary text-on-secondary shadow-lg"
+                      : "bg-surface-ice text-on-surface-variant hover:bg-surface-container-low",
+                  ].join(" ")}
+                >
+                  <p className="font-mono text-[9px] font-medium uppercase tracking-wider sm:text-label-sm">
+                    Module {index + 1}
+                  </p>
+
+                  <p className="mt-1 line-clamp-2 font-display text-sm font-semibold leading-snug sm:text-base">
+                    {module.title}
+                  </p>
+
+                  <p className="mt-1 font-mono text-[9px] sm:text-label-sm">
+                    {count === 1 ? "1 lesson" : `${count} lessons`}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 space-y-2.5">
+            {lessons.map((lesson) => (
+              <LessonItem
+                key={lesson.id}
+                lesson={lesson}
+                courseId={courseId}
+                isEnrolled={isEnrolled}
+              />
+            ))}
+
+            {lessons.length === 0 ? (
+              <div className="rounded-2xl bg-surface-ice p-6 text-center text-sm text-on-surface-variant">
+                {current
+                  ? `"${current.title}" has no lessons yet.`
+                  : "No lessons available yet."}
+              </div>
+            ) : null}
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 function LessonItem({
   lesson,
   courseId,
@@ -813,25 +968,6 @@ function lessonTypeLabel(type: string) {
     default:
       return "Lesson";
   }
-}
-
-function weekDays() {
-  const now = new Date();
-
-  return Array.from({ length: 5 }, (_, index) => {
-    const date = new Date(now);
-
-    date.setDate(now.getDate() - now.getDay() + 1 + index);
-
-    return {
-      key: date.toISOString(),
-      // Through format.ts, not toLocaleDateString: one definition of how a
-      // date reads in this app, and no dependence on the browser's locale.
-      weekday: formatWeekdayShort(date).toUpperCase(),
-      day: date.getDate(),
-      month: formatMonthShort(date),
-    };
-  });
 }
 
 function CoursesDashboardSkeleton() {

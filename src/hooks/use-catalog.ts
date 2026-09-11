@@ -22,6 +22,10 @@ export function useCourseModules(courseId: number | string) {
   return useQuery({
     queryKey: qk.courseModules(courseId),
     queryFn: () => coursesRepository.modules(courseId),
+    // Callers pass "" while the course they belong to is still loading, which
+    // used to fire GET /courses//modules and take a 404 on every page load.
+    // Held here rather than at each call site so no caller has to remember.
+    enabled: courseId !== "" && courseId !== 0,
   });
 }
 
