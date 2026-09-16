@@ -79,12 +79,15 @@ function ProgressSkeleton() {
     <div className="space-y-8" aria-hidden="true">
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3">
         {Array.from({ length: 6 }, (_, index) => (
-          <Card key={index} className="gap-4 p-6">
-            <Skeleton className="size-11 rounded-xl" />
-            <div className="space-y-2">
-              <Skeleton className="h-3 w-24" />
-              <Skeleton className="h-7 w-16" />
+          // Value, then label — the order the real StatCard uses, with the
+          // icon in the top-right corner, so nothing shuffles on load.
+          <Card key={index} className="gap-0 p-6">
+            <div className="flex items-start justify-between gap-3">
+              <Skeleton className="h-8 w-20" />
+              <Skeleton className="size-10 shrink-0 rounded-xl" />
             </div>
+            <Skeleton className="mt-1 h-3 w-24" />
+            <Skeleton className="mt-1 h-3 w-28" />
           </Card>
         ))}
       </div>

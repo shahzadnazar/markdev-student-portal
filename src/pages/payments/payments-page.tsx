@@ -349,16 +349,21 @@ function BillingStatCards({
         transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
       >
         <Card className="h-full p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-surface-container text-on-surface-variant">
+          {/* Figure first, label under it, icon in the opposite corner — the
+              same order as the shared StatCard. These tiles are hand-rolled
+              because they carry a progress bar and a Pay button the shared
+              component has no business knowing about, but they are read as one
+              row of stats with the rest of the app and have to match it. */}
+          <div className="flex items-start justify-between gap-3">
+            <p className="min-w-0 flex-1 font-display text-headline-lg text-balance break-words text-on-surface">
+              {formatMoney(overview.total_amount, overview.currency)}
+            </p>
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-surface-container text-on-surface-variant">
               <Wallet className="size-5" aria-hidden="true" />
             </div>
-            <span className="font-mono text-label-sm text-on-surface-variant uppercase">
-              Total tuition
-            </span>
           </div>
-          <p className="mt-3 font-display text-headline-md text-on-surface">
-            {formatMoney(overview.total_amount, overview.currency)}
+          <p className="mt-1 font-mono text-label-sm text-on-surface-variant uppercase">
+            Total tuition
           </p>
           {cycleLabel && <p className="mt-1 text-body-sm text-on-surface-variant">{cycleLabel}</p>}
         </Card>
@@ -370,15 +375,15 @@ function BillingStatCards({
         transition={{ duration: 0.35, delay: 0.1, ease: "easeOut" }}
       >
         <Card className="h-full p-4">
-          <div className="flex items-start justify-between">
-            <div className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <div className="flex items-start justify-between gap-3">
+            <p className="min-w-0 flex-1 font-display text-headline-lg text-balance break-words text-primary">
+              {formatMoney(overview.paid_amount, overview.currency)}
+            </p>
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <CircleCheck className="size-5" aria-hidden="true" />
             </div>
-            <span className="font-mono text-label-sm text-primary uppercase">Paid to date</span>
           </div>
-          <p className="mt-3 font-display text-headline-md text-primary">
-            {formatMoney(overview.paid_amount, overview.currency)}
-          </p>
+          <p className="mt-1 font-mono text-label-sm text-primary uppercase">Paid to date</p>
           <Progress
             value={overview.paid_percent}
             className="mt-3"
@@ -396,28 +401,28 @@ function BillingStatCards({
         transition={{ duration: 0.35, delay: 0.15, ease: "easeOut" }}
       >
         <Card className="h-full p-4">
-          <div className="flex items-start justify-between">
+          <div className="flex items-start justify-between gap-3">
+            <p className="min-w-0 flex-1 font-display text-headline-lg text-balance break-words text-on-surface">
+              {formatMoney(overview.remaining_amount, overview.currency)}
+            </p>
             <div
               className={
                 settled
-                  ? "flex size-9 items-center justify-center rounded-lg bg-success-container text-success"
-                  : "flex size-9 items-center justify-center rounded-lg bg-error-container text-error"
+                  ? "flex size-9 shrink-0 items-center justify-center rounded-lg bg-success-container text-success"
+                  : "flex size-9 shrink-0 items-center justify-center rounded-lg bg-error-container text-error"
               }
             >
               <CalendarClock className="size-5" aria-hidden="true" />
             </div>
-            <span
-              className={
-                settled
-                  ? "font-mono text-label-sm text-success uppercase"
-                  : "font-mono text-label-sm text-error uppercase"
-              }
-            >
-              Remaining
-            </span>
           </div>
-          <p className="mt-3 font-display text-headline-md text-on-surface">
-            {formatMoney(overview.remaining_amount, overview.currency)}
+          <p
+            className={
+              settled
+                ? "mt-1 font-mono text-label-sm text-success uppercase"
+                : "mt-1 font-mono text-label-sm text-error uppercase"
+            }
+          >
+            Remaining
           </p>
           {settled ? (
             <p className="mt-1 text-body-sm text-on-surface-variant">

@@ -517,16 +517,22 @@ function AttendanceRowSkeleton({ withBorder }: { withBorder: boolean }) {
   );
 }
 
-/** Loading tile mirroring the StatCard layout. */
+/**
+ * Loading tile mirroring the StatCard layout.
+ *
+ * Same order as the real card — value, then label, then hint, with the icon in
+ * the top-right — so nothing jumps when the data lands. A skeleton that still
+ * showed the old arrangement would shuffle the card on every load.
+ */
 function StatCardSkeleton() {
   return (
-    <div className="flex items-start gap-4 rounded-2xl bg-white p-6 shadow-card">
-      <Skeleton className="size-11 shrink-0 rounded-xl" />
-      <div className="min-w-0 flex-1 space-y-2">
-        <Skeleton className="h-3.5 w-24" />
-        <Skeleton className="h-7 w-16" />
-        <Skeleton className="h-3.5 w-28" />
+    <div className="rounded-2xl bg-white p-4 shadow-card">
+      <div className="flex items-start justify-between gap-3">
+        <Skeleton className="h-8 w-20" />
+        <Skeleton className="size-9 shrink-0 rounded-xl" />
       </div>
+      <Skeleton className="mt-1 h-3.5 w-24" />
+      <Skeleton className="mt-1 h-3.5 w-28" />
     </div>
   );
 }
