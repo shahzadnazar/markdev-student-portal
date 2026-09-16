@@ -29,14 +29,6 @@ export interface AttendanceSummary {
   late_count: number;
   /** Days covered by an approved leave application. */
   leave_count: number;
-  /**
-   * Days the academy excused without a leave application behind them.
-   *
-   * Counted, and worth the same as approved leave, but reported separately:
-   * an excused day does not spend the student's monthly leave allowance, and
-   * saying "leave" for one would be claiming it did.
-   */
-  excused_count: number;
   /** Percentage 0–100. */
   attendance_rate: number;
   /**
@@ -76,7 +68,6 @@ export type DailyAttendanceStatus =
   | "late"
   | "absent"
   | "leave"
-  | "excused"
   | "holiday";
 
 /**

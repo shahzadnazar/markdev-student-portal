@@ -29,7 +29,6 @@ const statusOptions: ReadonlyArray<{ value: DailyAttendanceStatus; label: string
   { value: "late", label: "Late" },
   { value: "absent", label: "Absent" },
   { value: "leave", label: "Leave" },
-  { value: "excused", label: "Excused" },
   { value: "holiday", label: "Holiday" },
 ];
 
@@ -44,7 +43,6 @@ export const statusBadge: Record<
   // Its own label rather than a second kind of Leave: it is worth the same
   // half day, but it did not come out of the student's leave allowance and
   // saying "Leave" would tell them it did.
-  excused: { variant: "neutral", label: "Excused" },
   // Deliberately its own colour rather than a shade of any of the four above:
   // a day the academy was shut is not a verdict on the student, and it is not
   // counted in the cards or the rate either.
@@ -323,19 +321,6 @@ export default function AttendancePage() {
               hint="Approved leave"
             />
             </div>
-            {summaryQuery.data.excused_count > 0 ? (
-              // A line rather than a sixth card, like the holiday note below:
-              // rare, and what the student needs is the reassurance about
-              // their allowance rather than the number.
-              <p className="mt-3 text-body-sm text-on-surface-variant">
-                {summaryQuery.data.excused_count}{" "}
-                {summaryQuery.data.excused_count === 1 ? "day was" : "days were"} excused by the
-                academy. {summaryQuery.data.excused_count === 1 ? "It counts" : "They count"} the
-                same as approved leave toward your rate, but{" "}
-                {summaryQuery.data.excused_count === 1 ? "it did" : "they did"} not come out of your
-                leave allowance.
-              </p>
-            ) : null}
             {summaryQuery.data.holiday_count > 0 ? (
               // A line rather than a sixth card: the number itself is not the
               // point, the reassurance is — a day off does not touch the rate

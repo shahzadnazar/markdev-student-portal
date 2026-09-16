@@ -69,7 +69,6 @@ describe("status badges", () => {
     "late",
     "absent",
     "leave",
-    "excused",
     "holiday",
   ];
 
@@ -80,11 +79,11 @@ describe("status badges", () => {
     }
   });
 
-  it("calls an excused day excused, not leave", () => {
-    // It is worth the same half day, but it did not come out of the student's
-    // leave allowance — reporting one as the other is what the consolidation
-    // set out to stop.
-    expect(statusBadge.excused.label).toBe("Excused");
-    expect(statusBadge.excused.label).not.toBe(statusBadge.leave.label);
+  it("has no badge for the retired excused status", () => {
+    // `excused` came with the class-attendance sheet and was retired server
+    // side; its rows became `present`. A badge left behind would be dead code
+    // waiting to be reached by a status the API can no longer send.
+    expect(Object.keys(statusBadge)).toEqual(statuses);
+    expect(Object.keys(statusBadge)).not.toContain("excused");
   });
 });
