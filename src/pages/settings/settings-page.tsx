@@ -1,27 +1,15 @@
 import { motion } from "framer-motion";
-import { BellRing, Globe } from "lucide-react";
+import { BellRing } from "lucide-react";
 import { toast } from "sonner";
 import { ErrorState } from "@/components/shared/error-state";
 import { PageHeader } from "@/components/shared/page-header";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import { useSettings, useUpdateSettings } from "@/hooks/use-engagement";
 import type { NotificationPreferences, UserSettings } from "@/types";
-
-const LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "ur", label: "اردو (Urdu)" },
-];
 
 const NOTIFICATION_ROWS: ReadonlyArray<{
   key: keyof NotificationPreferences;
@@ -80,15 +68,11 @@ export default function SettingsPage() {
       <PageHeader
         eyebrow="Account"
         title="Settings"
-        description="Language and how MarkDev keeps you informed."
+        description="How MarkDev keeps you informed."
       />
 
       {settingsQuery.isLoading ? (
         <div className="max-w-3xl space-y-6">
-          <Card className="space-y-5 p-6">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-10 w-full" />
-          </Card>
           <Card className="space-y-5 p-6">
             <Skeleton className="h-4 w-32" />
             {Array.from({ length: 4 }, (_, index) => (
@@ -112,41 +96,11 @@ export default function SettingsPage() {
         />
       ) : settings ? (
         <div className="max-w-3xl space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.05, ease: "easeOut" }}
-          >
-            <Card className="p-6">
-              <div className="mb-5 flex items-center gap-2.5">
-                <Globe className="size-4 text-primary" aria-hidden="true" />
-                <h2 className="font-mono text-label-md text-on-surface uppercase">Preferences</h2>
-              </div>
-
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label htmlFor="settings-language">Language</Label>
-                  <Select
-                    value={settings.language}
-                    onValueChange={(value) => save({ language: value })}
-                    disabled={updateSettings.isPending}
-                  >
-                    <SelectTrigger id="settings-language" aria-label="Language">
-                      <SelectValue placeholder="Select a language" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {LANGUAGES.map((language) => (
-                        <SelectItem key={language.value} value={language.value}>
-                          {language.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-
+          {/* The Preferences card went with the Language select it held.
+              The select saved a value nothing read — there is no i18n layer in
+              this portal at all — so picking Urdu changed nothing and looked
+              like a bug. An empty card would have been the same lie with less
+              in it. */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}

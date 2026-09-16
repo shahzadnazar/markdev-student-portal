@@ -500,7 +500,6 @@ export interface NotificationPreferences {
 }
 
 export interface UserSettings {
-  language: string;
   notifications: NotificationPreferences;
 }
 

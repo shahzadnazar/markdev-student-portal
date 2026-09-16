@@ -84,11 +84,15 @@ describe("filters that stayed single-select", () => {
     }
   });
 
-  it("the language setting stays a single select", () => {
-    // A setting, not a filter: it has exactly one value by definition.
+  it("the settings page has no filter-shaped control to convert", () => {
+    // This used to assert the Language select stayed a single select — a
+    // setting, not a filter, so one value by definition. Language is gone: it
+    // saved a value nothing read, because the portal has no i18n layer. What
+    // is left is switches, and a switch is not a filter either.
     const src = readFileSync(new URL("../../pages/settings/settings-page.tsx", import.meta.url), "utf8");
 
-    expect(src).toContain("<Select");
     expect(src).not.toContain("MultiSelect");
+    expect(src).not.toContain("<Select");
+    expect(src).toContain("<Switch");
   });
 });
