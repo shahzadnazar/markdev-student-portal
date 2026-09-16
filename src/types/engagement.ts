@@ -236,9 +236,37 @@ export interface Certificate {
 
 /* -------------------------------- Progress -------------------------------- */
 
+/**
+ * One component of a course's progress, as the API worked it out.
+ *
+ * `weight` is what the admin typed; `effective_weight` is what it is ACTUALLY
+ * worth once components with no data in the course have been excluded and their
+ * share redistributed. The contributions add up to `progress_percent` using the
+ * effective weights, which is why the breakdown a student reads always totals
+ * the number above it.
+ */
+export interface ProgressComponent {
+  key: "attendance" | "quiz" | "assignment" | "premium";
+  label: string;
+  weight: number;
+  effective_weight: number;
+  /** null when the course has no such data at all — see `excluded`. */
+  score: number | null;
+  contribution: number;
+  /**
+   * True when the COURSE has nothing of this kind — no quizzes set at all.
+   * Not the same as a student who has not done the work: an unattempted quiz
+   * scores 0 and is not excluded.
+   */
+  excluded: boolean;
+}
+
 export interface CourseProgress {
   course: CourseRef;
   progress_percent: number;
+  /** Quizzes, assignments and premium content only — what earns a certificate. */
+  coursework_percent: number;
+  breakdown: ProgressComponent[];
   completed_lessons: number;
   total_lessons: number;
   time_spent_minutes: number;

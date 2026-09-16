@@ -96,8 +96,27 @@ export function useCertificates() {
   return useQuery({ queryKey: qk.certificates, queryFn: () => certificatesRepository.list() });
 }
 
+/**
+ * The student's progress, refetched on focus and on a slow interval.
+ *
+ * Their OWN actions update it instantly: completing a lesson, submitting a quiz
+ * and having an assignment graded all invalidate this query, so the figure moves
+ * without a reload.
+ *
+ * ANOTHER PERSON'S action does not. Attendance is marked by an instructor, and
+ * nothing in this browser knows it happened. Rather than run a websocket server
+ * for one number, the page refetches when the tab regains focus — which covers
+ * the realistic case of a student switching back to it — and otherwise once a
+ * minute. So: own actions immediate, an instructor's register up to 60 seconds
+ * behind, or immediate if the student looks away and back.
+ */
 export function useProgress() {
-  return useQuery({ queryKey: qk.progress, queryFn: () => progressRepository.overview() });
+  return useQuery({
+    queryKey: qk.progress,
+    queryFn: () => progressRepository.overview(),
+    refetchOnWindowFocus: true,
+    refetchInterval: 60_000,
+  });
 }
 
 export function useLeaderboard(period: Leaderboard["period"] = "weekly") {

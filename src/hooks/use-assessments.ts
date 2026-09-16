@@ -33,6 +33,9 @@ export function useSubmitAssignment(assignmentId: number | string) {
       void queryClient.invalidateQueries({ queryKey: qk.assignment(assignmentId) });
       void queryClient.invalidateQueries({ queryKey: ["assignments"] });
       void queryClient.invalidateQueries({ queryKey: qk.dashboard });
+      // Assignments are one of the four progress components, so the figure on
+      // the Progress page moves with this — no reload.
+      void queryClient.invalidateQueries({ queryKey: qk.progress });
     },
   });
 }
@@ -77,6 +80,8 @@ export function useSubmitQuizAttempt(quizId: number | string) {
       void queryClient.invalidateQueries({ queryKey: qk.quiz(quizId) });
       void queryClient.invalidateQueries({ queryKey: ["quizzes"] });
       void queryClient.invalidateQueries({ queryKey: qk.dashboard });
+      // A submitted attempt changes the quiz component immediately.
+      void queryClient.invalidateQueries({ queryKey: qk.progress });
     },
   });
 }

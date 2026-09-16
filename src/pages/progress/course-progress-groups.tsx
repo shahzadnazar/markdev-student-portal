@@ -81,6 +81,8 @@ function CourseProgressRow({ item, index }: CourseProgressRowProps) {
             </div>
           )}
 
+          <ProgressBreakdown item={item} />
+
           <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-label-sm text-on-surface-variant">
             <span>
               {item.completed_lessons}/{item.total_lessons} lessons
@@ -179,6 +181,70 @@ export function CourseProgressGroups({ courses }: CourseProgressGroupsProps) {
           />
         }
       />
+    </div>
+  );
+}
+
+/**
+ * What the percentage is made of — never one opaque number.
+ *
+ * Each row is a component the admin ticked: what the student scored, what it is
+ * worth, and what that contributed. The contributions use the EFFECTIVE weight,
+ * so they add up to the total shown above even when a component has been
+ * excluded and its share redistributed.
+ *
+ * A component the admin unticked is not here at all — the API omits it rather
+ * than sending a row worth nothing. A component excluded because the COURSE has
+ * no such data says so in words, because silently vanishing would look like a
+ * page that failed to load.
+ */
+function ProgressBreakdown({ item }: { item: CourseProgress }) {
+  if (item.breakdown.length === 0) return null;
+
+  return (
+    <div className="mt-3 rounded-xl bg-surface-ice/60 p-3">
+      <table className="w-full font-mono text-label-sm">
+        <caption className="sr-only">
+          How {item.course.title} progress is calculated
+        </caption>
+        <tbody>
+          {item.breakdown.map((part) => (
+            <tr key={part.key} className="align-baseline">
+              <th scope="row" className="py-0.5 pr-2 text-left font-medium text-on-surface-variant">
+                {part.label}
+              </th>
+
+              {part.excluded ? (
+                <td colSpan={3} className="py-0.5 text-on-surface-variant">
+                  Not set on this course — its share goes to the others
+                </td>
+              ) : (
+                <>
+                  <td className="py-0.5 pr-2 text-right tabular-nums text-on-surface">
+                    {formatPercent(part.score ?? 0)}
+                  </td>
+                  <td className="py-0.5 pr-2 text-right tabular-nums text-outline">
+                    ×{Math.round(part.effective_weight)}
+                  </td>
+                  <td className="py-0.5 text-right tabular-nums text-on-surface">
+                    {part.contribution.toFixed(1)}
+                  </td>
+                </>
+              )}
+            </tr>
+          ))}
+
+          <tr className="border-t border-outline-variant/40">
+            <th scope="row" className="pt-1.5 pr-2 text-left font-semibold text-on-surface">
+              Total
+            </th>
+            <td colSpan={2} />
+            <td className="pt-1.5 text-right font-semibold tabular-nums text-on-surface">
+              {formatPercent(item.progress_percent)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
     </div>
   );
 }
